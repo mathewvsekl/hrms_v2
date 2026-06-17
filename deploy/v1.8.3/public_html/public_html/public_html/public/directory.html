@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Employee Directory | HRMS V2</title>
+    <link rel="icon" type="image/svg+xml" href="avant-garde-logo.svg">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #0F5E3A;
+            --primary-hover: #004726;
+            --bg: #f8f9fa;
+            --surface: #ffffff;
+            --text: #212529;
+            --muted: #6c757d;
+            --border: #e9ecef;
+            --success: #10b981;
+            --warning: #f9b233;
+            --danger: #ef4444;
+            --purple: #94a3b8;
+            --shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            padding: 24px 32px;
+        }
+
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+        }
+
+        .page-header h1 {
+            font-size: 22px;
+            font-weight: 600;
+        }
+
+        .page-header p {
+            font-size: 13px;
+            color: var(--muted);
+        }
+
+        .btn {
+            padding: 10px 18px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            border: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: #fff;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-hover);
+        }
+
+        .btn-outline {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            color: var(--text);
+        }
+
+        .btn-outline:hover {
+            background: #f1f5f9;
+        }
+
+        .filters-bar {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .search-box {
+            flex: 1;
+            min-width: 240px;
+            position: relative;
+        }
+
+        .search-box input {
+            width: 100%;
+            padding: 10px 12px 10px 36px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 13px;
+            background: var(--surface);
+        }
+
+        .search-box i {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--muted);
+            font-size: 16px;
+        }
+
+        .filter-select {
+            padding: 10px 12px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 13px;
+            background: var(--surface);
+            min-width: 140px;
+            color: var(--text);
+        }
+
+        .stats-row {
+            display: flex;
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .stat-chip {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 12px 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            box-shadow: var(--shadow);
+        }
+
+        .stat-chip .num {
+            font-size: 22px;
+            font-weight: 700;
+        }
+
+        .stat-chip .label {
+            font-size: 11px;
+            color: var(--muted);
+            font-weight: 500;
+        }
+
+        .emp-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: var(--surface);
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border);
+        }
+
+        .emp-table thead th {
+            padding: 14px 16px;
+            text-align: left;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            color: var(--muted);
+            border-bottom: 2px solid var(--border);
+            background: #fafbfc;
+            font-weight: 600;
+        }
+
+        .emp-table tbody tr {
+            border-bottom: 1px solid var(--border);
+            transition: background 0.15s;
+            cursor: pointer;
+        }
+
+        .emp-table tbody tr:hover {
+            background: #f8faff;
+        }
+
+        .emp-table tbody td {
+            padding: 12px 16px;
+            font-size: 13px;
+            vertical-align: middle;
+        }
+
+        .emp-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary), var(--purple));
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 13px;
+            font-weight: 600;
+            flex-shrink: 0;
+        }
+
+        .emp-name-cell {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .emp-name {
+            font-weight: 600;
+            font-size: 13px;
+        }
+
+        .emp-email {
+            font-size: 11px;
+            color: var(--muted);
+        }
+
+        .badge {
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 500;
+        }
+
+        .badge-active {
+            background: rgba(16, 185, 129, 0.1);
+            color: var(--success);
+        }
+
+        .badge-inactive {
+            background: rgba(108, 117, 125, 0.1);
+            color: var(--muted);
+        }
+
+        .badge-onboarding {
+            background: rgba(0, 93, 50, 0.1);
+            color: var(--primary);
+        }
+
+        .action-btn {
+            padding: 6px 10px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 12px;
+            cursor: pointer;
+            background: var(--surface);
+            color: var(--muted);
+            transition: all 0.2s;
+        }
+
+        .action-btn:hover {
+            color: var(--primary);
+            border-color: var(--primary);
+        }
+
+        /* Profile Drawer */
+        .drawer-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.35);
+            z-index: 1000;
+        }
+
+        .drawer-overlay.open {
+            display: block;
+        }
+
+        .profile-drawer {
+            position: fixed;
+            top: 0;
+            right: -480px;
+            width: 460px;
+            height: 100vh;
+            background: var(--surface);
+            box-shadow: -8px 0 32px rgba(0, 0, 0, 0.12);
+            z-index: 1001;
+            transition: right 0.3s ease;
+            overflow-y: auto;
+        }
+
+        .profile-drawer.open {
+            right: 0;
+        }
+
+        .drawer-header {
+            padding: 24px;
+            background: linear-gradient(135deg, #004726, #005d32);
+            color: #fff;
+        }
+
+        .drawer-close {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            color: rgba(255, 255, 255, 0.7);
+            cursor: pointer;
+            font-size: 20px;
+        }
+
+        .drawer-avatar {
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.15);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 12px;
+        }
+
+        .drawer-body {
+            padding: 24px;
+        }
+
+        .detail-section {
+            margin-bottom: 20px;
+        }
+
+        .detail-section h4 {
+            font-size: 12px;
+            text-transform: uppercase;
+            color: var(--muted);
+            letter-spacing: 0.04em;
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 6px 0;
+            font-size: 13px;
+        }
+
+        .detail-row .label {
+            color: var(--muted);
+        }
+
+        .detail-row .value {
+            font-weight: 500;
+            text-align: right;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="page-header">
+        <div>
+            <h1>Employee Directory</h1>
+            <p>Enterprise HRMS — 11 Active Employees</p>
+        </div>
+        <button class="btn btn-primary" onclick="window.parent.location.hash = '#onboarding'"><i
+                class="ri-user-add-line"></i> Add Employee</button>
+    </div>
+
+    <div class="stats-row">
+        <div class="stat-chip">
+            <div>
+                <div class="num" style="color:var(--success);">10</div>
+                <div class="label">ACTIVE</div>
+            </div>
+        </div>
+        <div class="stat-chip">
+            <div>
+                <div class="num" style="color:var(--warning);">1</div>
+                <div class="label">ON LEAVE</div>
+            </div>
+        </div>
+        <div class="stat-chip">
+            <div>
+                <div class="num" style="color:var(--muted);">0</div>
+                <div class="label">OFFBOARDING</div>
+            </div>
+        </div>
+        <div class="stat-chip">
+            <div>
+                <div class="num" style="color:var(--primary);">UGX 33.1M</div>
+                <div class="label">MONTHLY PAYROLL</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="filters-bar">
+        <div class="search-box">
+            <i class="ri-search-line"></i>
+            <input type="text" id="searchInput" placeholder="Search by name, ID, or designation..."
+                oninput="filterTable()">
+        </div>
+        <select class="filter-select" id="filterDept" onchange="filterTable()">
+            <option value="">All Departments</option>
+            <option value="Management">Management</option>
+            <option value="Finance">Finance</option>
+            <option value="Sales">Sales</option>
+            <option value="Operations">Operations</option>
+            <option value="Business Development">Business Development</option>
+        </select>
+        <select class="filter-select" id="filterStatus" onchange="filterTable()">
+            <option value="">All Statuses</option>
+            <option value="active">Active</option>
+            <option value="on_leave">On Leave</option>
+            <option value="inactive">Inactive</option>
+        </select>
+        <select class="filter-select" id="filterType" onchange="filterTable()">
+            <option value="">All Types</option>
+            <option value="full_time">Full Time</option>
+            <option value="contractor">Contractor</option>
+        </select>
+    </div>
+
+    <table class="emp-table">
+        <thead>
+            <tr>
+                <th>Employee</th>
+                <th>Staff ID</th>
+                <th>Designation</th>
+                <th>Department</th>
+                <th>Hire Date</th>
+                <th>Status</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody id="emp-table-body"></tbody>
+    </table>
+
+    <!-- Profile Drawer -->
+    <div class="drawer-overlay" id="drawerOverlay" onclick="closeDrawer()"></div>
+    <div class="profile-drawer" id="profileDrawer">
+        <div class="drawer-header" style="position:relative;">
+            <span class="drawer-close" onclick="closeDrawer()"><i class="ri-close-line"></i></span>
+            <div class="drawer-avatar" id="d-avatar"></div>
+            <h2 id="d-name" style="font-size:20px; font-weight:600; margin-bottom:4px;"></h2>
+            <p id="d-designation" style="font-size:13px; opacity:0.8;"></p>
+        </div>
+        <div class="drawer-body">
+            <div class="detail-section">
+                <h4>Personal Information</h4>
+                <div class="detail-row"><span class="label">Staff ID</span><span class="value" id="d-code"></span></div>
+                <div class="detail-row"><span class="label">Date of Birth</span><span class="value" id="d-dob"></span>
+                </div>
+                <div class="detail-row"><span class="label">Phone</span><span class="value" id="d-phone"></span></div>
+                <div class="detail-row"><span class="label">Email</span><span class="value" id="d-email"></span></div>
+            </div>
+            <div class="detail-section">
+                <h4>Employment Details</h4>
+                <div class="detail-row"><span class="label">Department</span><span class="value" id="d-dept"></span>
+                </div>
+                <div class="detail-row"><span class="label">Type</span><span class="value" id="d-type"></span></div>
+                <div class="detail-row"><span class="label">Hire Date</span><span class="value" id="d-hire"></span>
+                </div>
+                <div class="detail-row"><span class="label">Reports To</span><span class="value" id="d-manager"></span>
+                </div>
+            </div>
+            <div class="detail-section">
+                <h4>Financial / Compliance</h4>
+                <div class="detail-row"><span class="label">TIN</span><span class="value" id="d-tin"></span></div>
+                <div class="detail-row"><span class="label">NSSF No.</span><span class="value" id="d-nssf"></span></div>
+                <div class="detail-row"><span class="label">Bank</span><span class="value" id="d-bank"></span></div>
+                <div class="detail-row"><span class="label">Account No.</span><span class="value" id="d-acct"></span>
+                </div>
+                <div class="detail-row"><span class="label">Basic Salary</span><span class="value" id="d-salary"></span>
+                </div>
+            </div>
+            <div style="margin-top: 32px; display: flex; justify-content: space-between;">
+                <button id="view-profile-btn" class="btn btn-outline" style="color: var(--primary);">
+                    <i class="ri-user-settings-line"></i> View Full Profile
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="table-component.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            loadDirectory();
+        });
+
+        async function loadDirectory() {
+            const res = await API.get('/api/employees');
+            if (!res.error) {
+                // Determine if the backend returned `{status:'success', data: [...]}` or just `[...]`
+                const employeeList = Array.isArray(res.data) ? res.data : (Array.isArray(res) ? res : []);
+
+                window.EMPLOYEES = employeeList;
+                renderTable(employeeList);
+                updateStats(employeeList);
+            }
+        }
+
+        function updateStats(data) {
+            const active = data.filter(e => e.status === 'active').length;
+            const onLeave = data.filter(e => e.status === 'on_leave').length;
+            const inactive = data.filter(e => e.status === 'inactive').length;
+            const totalPayroll = data.reduce((acc, e) => acc + (parseFloat(e.basic_salary) || 0), 0);
+
+            const numElements = document.querySelectorAll('.stat-chip .num');
+            if (numElements.length >= 4) {
+                numElements[0].innerText = active;
+                numElements[1].innerText = onLeave;
+                numElements[2].innerText = inactive;
+                numElements[3].innerText = totalPayroll > 0 ? 'UGX ' + (totalPayroll / 1000000).toFixed(1) + 'M' : 'UGX 0M';
+            }
+        }
+
+        function getInitials(f, l) {
+            const first = f ? f.trim()[0] : '';
+            const last = l ? l.trim()[0] : '';
+            return (first + last).toUpperCase() || '?';
+        }
+
+        function renderTable(data) {
+            const tbody = document.getElementById('emp-table-body');
+            if (!data || data.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:48px; color:var(--text-muted);"><i class="ri-user-search-line" style="font-size:32px; display:block; margin-bottom:12px; opacity:0.5;"></i>No employees found. Try adjusting your filters or <a href="#onboarding" style="color:var(--primary); font-weight:600;">onboard a new employee</a>.</td></tr>`;
+                return;
+            }
+            try {
+                tbody.innerHTML = data.map(e => {
+                    const statusVal = e.status || '';
+                    const statusBadge = statusVal === 'active' ? '<span class="badge badge-active">Active</span>'
+                        : statusVal === 'on_leave' ? '<span class="badge badge-onboarding">On Leave</span>'
+                            : '<span class="badge badge-inactive">Inactive</span>';
+
+                    const fName = String(e.first_name || '');
+                    const lName = String(e.last_name || '');
+
+                    return `
+                        <tr onclick="openDrawer(${e.id})" style="cursor:pointer;">
+                            <td>
+                                <div class="emp-name-cell">
+                                    <div class="emp-avatar">${getInitials(fName, lName)}</div>
+                                    <div>
+                                        <div class="emp-name">${fName} ${lName}</div>
+                                        <div class="emp-email">${e.email || '—'}</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td style="font-family:monospace; font-size:12px; color:var(--muted);">${e.employee_code || ''}</td>
+                            <td>${e.designation || '—'}</td>
+                            <td>${e.department_name || 'N/A'}</td>
+                            <td style="font-size:12px;">${e.hire_date || '—'}</td>
+                            <td>${statusBadge}</td>
+                            <td><button class="action-btn" onclick="event.stopPropagation(); openDrawer(${e.id})"><i class="ri-eye-line"></i></button></td>
+                        </tr>
+                    `;
+                }).join('');
+            } catch (error) {
+                console.error("Error rendering table:", error);
+                tbody.innerHTML = `<tr><td colspan="7" style="color:red; text-align:center;">Error rendering data. Check console.</td></tr>`;
+            }
+        }
+
+        function filterTable() {
+            const q = document.getElementById('searchInput').value.toLowerCase();
+            const dept = document.getElementById('filterDept').value;
+            const status = document.getElementById('filterStatus').value;
+            const type = document.getElementById('filterType').value;
+
+            const filtered = (window.EMPLOYEES || []).filter(e => {
+                const fName = e.first_name || '';
+                const lName = e.last_name || '';
+                const code = e.employee_code || '';
+                const desig = e.designation || '';
+                const nameStr = `${fName} ${lName} ${code} ${desig}`.toLowerCase();
+
+                const matchSearch = !q || nameStr.includes(q);
+                // Note: database might return different department strings, we should ideally fetch departments too
+                const matchDept = !dept || (e.department_name === dept);
+                const matchStatus = !status || e.status === status;
+                const matchType = !type || e.employment_type === type;
+                return matchSearch && matchDept && matchStatus && matchType;
+            });
+            renderTable(filtered);
+        }
+
+        function openDrawer(id) {
+            window.currentDrawerId = id;
+            const e = (window.EMPLOYEES || []).find(x => x.id == id);
+            if (!e) return;
+
+            const initials = getInitials(e.first_name, e.last_name).toUpperCase();
+            document.getElementById('d-avatar').innerText = initials;
+            document.getElementById('d-name').innerText = `${e.first_name} ${e.last_name}`;
+            document.getElementById('d-designation').innerText = e.designation;
+            document.getElementById('d-code').innerText = e.employee_code;
+            document.getElementById('d-dob').innerText = e.date_of_birth || '—';
+            document.getElementById('d-phone').innerText = e.phone || '—';
+            document.getElementById('d-email').innerText = e.email || '—';
+            document.getElementById('d-dept').innerText = e.department_name || 'N/A';
+            document.getElementById('d-type').innerText = (e.employment_type || 'full_time').replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase());
+            document.getElementById('d-hire').innerText = e.hire_date || '—';
+            document.getElementById('d-manager').innerText = 'N/A'; // Need to join in API if wanted
+
+            // Compliance
+            const custom = typeof e.custom_data === 'string' ? JSON.parse(e.custom_data) : e.custom_data;
+            document.getElementById('d-tin').innerText = custom?.tin || '—';
+            document.getElementById('d-nssf').innerText = custom?.nssf_number || '—';
+            document.getElementById('d-bank').innerText = custom?.bank_name || '—';
+            document.getElementById('d-acct').innerText = custom?.bank_account || '—';
+            document.getElementById('d-salary').innerText = e.basic_salary ? 'UGX ' + parseFloat(e.basic_salary).toLocaleString() : '—';
+
+            // Robust Navigation Logic
+            document.getElementById('view-profile-btn').onclick = function () {
+                const route = 'employee-profile?id=' + id;
+                if (window.parent && window.parent !== window) {
+                    window.parent.location.hash = '#' + route;
+                } else {
+                    window.location.href = 'employee-profile.html?id=' + id;
+                }
+            };
+
+            document.getElementById('drawerOverlay').classList.add('open');
+            document.getElementById('profileDrawer').classList.add('open');
+        }
+
+        function closeDrawer() {
+            document.getElementById('drawerOverlay').classList.remove('open');
+            document.getElementById('profileDrawer').classList.remove('open');
+        }
+    </script>
+
+</body>
+
+</html>

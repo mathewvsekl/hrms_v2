@@ -1,0 +1,28 @@
+# HRMS V2.0.0 Post-Upload Instructions (DirectAdmin)
+
+1. UPLOAD AND EXTRACT
+   - Open DirectAdmin File Manager.
+   - Access your domain's folder (e.g., /domains/yourdomain.com/).
+   - Upload the ZIP archive to the directory ABOVE `public_html`.
+   - Extract the ZIP. This should populate:
+    - `public_html/`
+    - `storage/`
+    - `database/`
+    - `scripts/`
+    - `.env.example`
+    - `VERSION`
+
+2. DATABASE IMPORT
+   - Selective Database Import via phpMyAdmin.
+   - Import `database/schema.sql`.
+   - Import `database/seed.sql` (Mandatory).
+
+3. .env CONFIGURATION
+   - Rename `.env.example` to `.env`.
+   - Update DB_HOST, DB_NAME, DB_USER, and DB_PASS.
+
+4. PERMISSIONS VERIFICATION
+   - Set `/storage/` subdirectories to CHMOD 775 or 777.
+
+5. ACCESS DOMAIN
+   - Visit https://yourdomain.com in your browser.

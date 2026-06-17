@@ -1,0 +1,1374 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <title>HR Administration Centre | HRMS V2</title>
+    <link rel="icon" type="image/svg+xml" href="avant-garde-logo.svg">
+    <!-- Inter Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Remix Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+    <style>
+        :root {
+            --sidebar-bg: #0B3E28;
+            /* Dark Green Sidebar */
+            --sidebar-text: #a0aabf;
+            --sidebar-active-bg: #0F5E3A;
+            --sidebar-active-text: #ffffff;
+            /* Avant Green accent */
+
+            --main-bg: #f8f9fa;
+            --surface: #ffffff;
+            --text-main: #212529;
+            --text-muted: #6c757d;
+            --border: #e9ecef;
+
+            --primary: #0F5E3A;
+            /* Deep Corporate Green */
+            --success: #10b981;
+            --warning: #f9b233;
+            --danger: #ef4444;
+            --purple: #8b5cf6;
+
+            --sidebar-width: 260px;
+            --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.05);
+            --shadow-card: 0 2px 8px rgba(0, 0, 0, 0.04);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--main-bg);
+            color: var(--text-main);
+            display: flex;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* --- Dark Sidebar Navigation --- */
+        .sidebar {
+            width: var(--sidebar-width);
+            background: var(--sidebar-bg);
+            color: var(--sidebar-text);
+            display: flex;
+            flex-direction: column;
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 100vh;
+            z-index: 100;
+        }
+
+        .sidebar-header {
+            padding: 24px 20px;
+            display: flex;
+            align-items: center;
+        }
+
+        .company-logo {
+            max-width: 140px;
+            height: auto;
+            margin-right: 10px;
+        }
+
+        .role-badge {
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 0.05em;
+            color: #fff;
+            padding: 4px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            margin: 0 20px 16px;
+        }
+
+        .profile-card {
+            background-color: rgba(0, 0, 0, 0.2);
+            border-radius: 8px;
+            padding: 12px 16px;
+            margin: 0 16px 20px;
+            display: flex;
+            align-items: center;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .profile-info {
+            font-size: 13px;
+            color: #fff;
+            line-height: 1.4;
+        }
+
+        .profile-info span {
+            color: var(--sidebar-text);
+            font-size: 11px;
+            display: block;
+        }
+
+        .sidebar-nav {
+            padding: 10px 0;
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            padding: 12px 24px;
+            color: var(--sidebar-text);
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            border-left: 3px solid transparent;
+        }
+
+        .nav-item i {
+            font-size: 18px;
+            margin-right: 12px;
+            width: 20px;
+            text-align: center;
+        }
+
+        .nav-item:hover {
+            background-color: rgba(255, 255, 255, 0.05);
+            color: #fff;
+        }
+
+        .nav-item.active {
+            color: var(--sidebar-active-text);
+            background-color: var(--sidebar-active-bg);
+            border-left-color: var(--sidebar-active-text);
+        }
+
+        .nav-group-title {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: rgba(255, 255, 255, 0.3);
+            font-weight: 600;
+            padding: 8px 24px 8px;
+            margin-top: 10px;
+        }
+
+        .sidebar-footer {
+            padding: 16px 0;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .footer-nav-item {
+            display: flex;
+            align-items: center;
+            padding: 10px 24px;
+            color: var(--sidebar-text);
+            text-decoration: none;
+            font-size: 13px;
+            cursor: pointer;
+        }
+
+        .footer-nav-item:hover {
+            color: #fff;
+        }
+
+        .footer-nav-item i {
+            margin-right: 10px;
+            font-size: 16px;
+        }
+
+        /* --- Main Content Area --- */
+        .main-content {
+            flex: 1;
+            margin-left: var(--sidebar-width);
+            padding: 24px 32px;
+        }
+
+        .top-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 24px;
+        }
+
+        .page-title h1 {
+            font-size: 24px;
+            font-weight: 600;
+            color: var(--text-main);
+            margin-bottom: 4px;
+        }
+
+        .page-title p {
+            color: var(--text-muted);
+            font-size: 14px;
+        }
+
+        .btn-outline {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .btn-outline:hover {
+            background: #f1f5f9;
+        }
+
+        /* --- Sub-Views --- */
+        .view-section {
+            display: none;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .view-section.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(5px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* --- Dashboard Grid Layout --- */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(12, 1fr);
+            gap: 20px;
+        }
+
+        .card {
+            background: var(--surface);
+            border-radius: 10px;
+            box-shadow: var(--shadow-card);
+            border: 1px solid var(--border);
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 16px;
+        }
+
+        .card-title {
+            font-size: 14px;
+            color: var(--text-muted);
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+        }
+
+        .card-icon {
+            color: var(--primary);
+            font-size: 20px;
+        }
+
+        /* Widget specific */
+        .col-span-3 {
+            grid-column: span 3;
+        }
+
+        .col-span-4 {
+            grid-column: span 4;
+        }
+
+        .col-span-6 {
+            grid-column: span 6;
+        }
+
+        .col-span-8 {
+            grid-column: span 8;
+        }
+
+        .col-span-12 {
+            grid-column: span 12;
+        }
+
+        @media (max-width: 1200px) {
+            .col-span-3 {
+                grid-column: span 6;
+            }
+
+            .col-span-6 {
+                grid-column: span 12;
+            }
+
+            .col-span-8 {
+                grid-column: span 12;
+            }
+        }
+
+        .stat-huge {
+            font-size: 36px;
+            font-weight: 700;
+            color: var(--text-main);
+            margin-bottom: 16px;
+        }
+
+        .badge-row {
+            display: flex;
+            gap: 12px;
+        }
+
+        .badge {
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .badge-green {
+            background: rgba(16, 185, 129, 0.1);
+            color: var(--success);
+        }
+
+        .badge-gray {
+            background: rgba(108, 117, 125, 0.1);
+            color: var(--text-muted);
+        }
+
+        /* Progress Bars */
+        .progress-list {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .progress-item {
+            width: 100%;
+        }
+
+        .progress-label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+            font-weight: 600;
+            margin-bottom: 6px;
+            color: var(--text-main);
+        }
+
+        .progress-label span:last-child {
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        .progress-track {
+            height: 6px;
+            background: #e9ecef;
+            border-radius: 3px;
+            overflow: hidden;
+            display: flex;
+        }
+
+        .progress-fill {
+            height: 100%;
+        }
+
+        .fill-green {
+            background: var(--success);
+        }
+
+        .fill-purple {
+            background: var(--purple);
+        }
+
+        .legend-row {
+            display: flex;
+            gap: 16px;
+            margin-top: 16px;
+            font-size: 11px;
+            color: var(--text-muted);
+            border-top: 1px solid var(--border);
+            padding-top: 12px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+        }
+
+        .legend-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            margin-right: 6px;
+        }
+
+        .empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            flex: 1;
+            color: #adb5bd;
+            padding: 20px;
+        }
+
+        .empty-state i {
+            font-size: 32px;
+            margin-bottom: 8px;
+            opacity: 0.5;
+        }
+
+        .event-item {
+            display: flex;
+            align-items: center;
+            padding-bottom: 12px;
+            margin-bottom: 12px;
+            border-bottom: 1px dashed var(--border);
+        }
+
+        .event-item:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
+
+        .event-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 6px;
+            background: #f1f5f9;
+            color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 12px;
+        }
+
+        .event-info h4 {
+            font-size: 13px;
+            font-weight: 600;
+            margin-bottom: 2px;
+        }
+
+        .event-info p {
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+
+        .link-text {
+            color: var(--success);
+            font-size: 12px;
+            font-weight: 500;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        /* --- Nested Configurations Style (Phase 5 Components) --- */
+        .config-tabs {
+            display: flex;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 24px;
+            background: var(--surface);
+            padding: 0 20px;
+            border-radius: 8px 8px 0 0;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .config-tab {
+            padding: 16px 20px;
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text-muted);
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+        }
+
+        .config-tab.active {
+            color: var(--primary);
+            border-bottom-color: var(--primary);
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- Dark Sidebar -->
+    <aside class="sidebar">
+        <div class="sidebar-header" style="justify-content: center; padding: 24px 20px;">
+                <img src="LOGO.png" alt="Enterprise Logo" id="main-logo" style="max-height: 48px; width: auto;">
+        </div>
+
+        <div class="role-badge">SUPER ADMIN</div>
+
+        <div class="profile-card">
+            <div class="profile-info">
+                Logged In As
+                <strong style="display:block; font-size:14px; margin:2px 0;">Administrator</strong>
+                <span>ID: EMP0034</span>
+            </div>
+        </div>
+
+        <nav class="sidebar-nav">
+            <a class="nav-item" href="#dashboard">
+                <i class="ri-dashboard-line"></i> Dashboard
+            </a>
+            <a class="nav-item" href="#directory">
+                <i class="ri-group-line"></i> Employee Directory
+            </a>
+            <a class="nav-item" href="#attendance">
+                <i class="ri-calendar-check-line"></i> Attendance Log
+            </a>
+            <a class="nav-item" href="#onboarding">
+                <i class="ri-user-add-line"></i> Onboarding
+            </a>
+            <a class="nav-item" href="#leave">
+                <i class="ri-umbrella-line"></i> Leave Management
+            </a>
+            <a class="nav-item" href="#payroll">
+                <i class="ri-wallet-3-line"></i> Payroll Center
+            </a>
+            <a class="nav-item" href="#appraisals">
+                <i class="ri-file-list-3-line"></i> Appraisals
+            </a>
+            <a class="nav-item" href="#offboarding">
+                <i class="ri-user-unfollow-line"></i> Offboarding
+            </a>
+            <a class="nav-item" href="#reports">
+                <i class="ri-bar-chart-box-line"></i> Reports
+            </a>
+            <a class="nav-item" href="#configurations">
+                <i class="ri-settings-4-line"></i> Configurations
+            </a>
+        </nav>
+
+        <div class="sidebar-footer">
+            <a class="footer-nav-item">
+                <i class="ri-user-smile-line"></i> My Employee Portal
+            </a>
+            <a class="footer-nav-item">
+                <i class="ri-logout-box-r-line"></i> Sign Out
+            </a>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+
+        <!-- View: HR Administration Dashboard (Operational Overview) -->
+        <section id="view-dashboard" class="view-section active">
+            <div class="top-bar">
+                <div class="page-title">
+                    <h1>HR Administration Centre</h1>
+                    <p>Enterprise HRMS Operational Overview</p>
+                </div>
+                <button class="btn-outline">Refresh Data</button>
+            </div>
+
+            <div class="dashboard-grid">
+
+                <!-- Headcount -->
+                <div class="card col-span-3">
+                    <div class="card-header">
+                        <span class="card-title">Total Headcount</span>
+                        <i class="ri-team-line" style="color:var(--primary);"></i>
+                    </div>
+                    <div class="stat-huge" id="dash-total-headcount">-</div>
+                    <div class="badge-row">
+                        <span class="badge badge-green" id="dash-active-headcount">Active: -</span>
+                        <span class="badge badge-gray" id="dash-contract-headcount">Contract: 0</span>
+                    </div>
+                </div>
+
+                <!-- Attendance Summary -->
+                <div class="card col-span-6">
+                    <div class="card-header">
+                        <span class="card-title" style="color:var(--text-main); font-weight:600;">
+                            <i class="ri-global-line" style="color:var(--success); margin-right:6px;"></i> Attendance
+                            Summary (Today)
+                        </span>
+                        <div style="text-align:right;">
+                            <span style="font-size:20px; font-weight:700;" id="dash-attendance-perc">0%</span>
+                            <span style="font-size:11px; color:var(--text-muted); display:block;"
+                                id="dash-attendance-count">0/0 Present</span>
+                        </div>
+                    </div>
+
+                    <div class="progress-list" id="dash-attendance-list">
+                        <div class="empty-state" style="padding: 10px;">Loading attendance data...</div>
+                    </div>
+
+                    <div class="legend-row">
+                        <div class="legend-item">
+                            <div class="legend-dot fill-purple"></div> Maternity Leave
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-dot fill-green"></div> Present
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Payroll Status -->
+                <div class="card col-span-3">
+                    <div class="card-header">
+                        <span class="card-title">Payroll Status</span>
+                        <i class="ri-bank-card-line" style="color:var(--purple);"></i>
+                    </div>
+                    <div class="stat-huge" style="margin-bottom:8px;">0% <span
+                            style="font-size:16px; font-weight:500;">Prepared</span></div>
+                    <div class="progress-track" style="background:#f1f5f9; height:4px; margin-top:20px;"></div>
+                </div>
+
+                <!-- Appraisals -->
+                <div class="card col-span-3">
+                    <div class="card-header">
+                        <span class="card-title">Appraisal Overview</span>
+                        <i class="ri-medal-line" style="color:#d97706;"></i>
+                    </div>
+                    <div class="stat-huge" id="dash-appraisals-count">0</div>
+                    <div style="font-size:11px; color:var(--text-muted);">Active performance reviews</div>
+                </div>
+
+                <!-- Pending Approvals -->
+                <div class="card col-span-6">
+                    <div class="card-header">
+                        <span class="card-title" style="color:var(--text-main); font-weight:600;"><i
+                                class="ri-time-line" style="margin-right:6px;"></i> Pending Approvals</span>
+                        <a class="link-text">View All</a>
+                    </div>
+                    <div class="empty-state" id="dash-pending-approvals-empty">
+                        <i class="ri-check-line"></i>
+                        No pending leave requests
+                    </div>
+                    <div id="dash-pending-approvals-list" style="display:none; padding-top: 10px;">
+                    </div>
+                </div>
+
+                <!-- Events -->
+                <div class="card col-span-3">
+                    <div class="card-header">
+                        <span class="card-title" style="color:var(--text-main); font-weight:600;"><i
+                                class="ri-cake-line" style="margin-right:6px;"></i> Upcoming Events</span>
+                    </div>
+                    <div class="event-item">
+                        <div class="event-icon"><i class="ri-medal-2-line"></i></div>
+                        <div class="event-info">
+                            <h4>Joseph</h4>
+                            <p>Work Anniversary • Apr 1</p>
+                        </div>
+                    </div>
+                    <div class="event-item">
+                        <div class="event-icon"><i class="ri-cake-3-line"></i></div>
+                        <div class="event-info">
+                            <h4>Atim</h4>
+                            <p>Birthday • Apr 2</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Mini Status Cards -->
+                <div class="card col-span-6" style="flex-direction:row; align-items:center; padding:16px 20px;">
+                    <i class="ri-user-add-line" style="color:var(--primary); font-size:24px; margin-right:16px;"></i>
+                    <div>
+                        <div style="font-size:20px; font-weight:700;" id="dash-onboarding-count">0</div>
+                        <div style="font-size:10px; color:var(--text-muted); font-weight:600; letter-spacing:0.05em;">IN
+                            ONBOARDING</div>
+                    </div>
+                </div>
+
+                <div class="card col-span-6" style="flex-direction:row; align-items:center; padding:16px 20px;">
+                    <i class="ri-user-unfollow-line"
+                        style="color:var(--danger); font-size:24px; margin-right:16px;"></i>
+                    <div>
+                        <div style="font-size:20px; font-weight:700;" id="dash-separation-count">0</div>
+                        <div style="font-size:10px; color:var(--text-muted); font-weight:600; letter-spacing:0.05em;">IN
+                            SEPARATION</div>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- View: Nested Configurations (Phase 5 Tools) -->
+        <section id="view-configurations" class="view-section">
+            <div class="top-bar">
+                <div class="page-title">
+                    <h1>System Configurations</h1>
+                    <p>Manage RBAC, Form Templates, and Global Settings</p>
+                </div>
+            </div>
+
+            <div class="config-tabs">
+                <div class="config-tab active" onclick="switchConfigTab('rbac')">RBAC Matrix</div>
+                <div class="config-tab" onclick="switchConfigTab('templates')">Field Builder</div>
+                <div class="config-tab" onclick="switchConfigTab('financials')">Financials</div>
+                <div class="config-tab" onclick="switchConfigTab('org')">Organization Structure</div>
+                <div class="config-tab" onclick="switchConfigTab('supervisor')">Agent Inbox</div>
+                <div class="config-tab" onclick="switchConfigTab('global')">Global Settings</div>
+            </div>
+
+            <!-- RBAC Matrix -->
+            <div id="config-rbac" class="card config-panel" style="display:block;">
+                <div class="card-header">
+                    <span class="card-title"><i class="ri-shield-keyhole-line"
+                            style="color:var(--primary);margin-right:8px;"></i> Role Permission Architect</span>
+                    <button class="btn-outline"
+                        style="padding:6px 14px;font-size:12px;border-radius:6px;cursor:pointer;border:1px solid var(--border);background:var(--primary);color:#fff;"
+                        onclick="document.getElementById('new-role-modal').style.display='flex'"><i
+                            class="ri-add-line"></i> New Role</button>
+                </div>
+                <div style="padding:0 20px 16px;">
+                    <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;">
+                        <label style="font-size:12px;font-weight:600;color:var(--text-muted);">Select Role:</label>
+                        <select id="rbac-role-select" class="btn-outline"
+                            style="padding:8px 12px;font-size:13px;border-radius:6px;min-width:200px;"
+                            onchange="loadRolePermissions()">
+                            <option value="super_admin">Super Admin</option>
+                            <option value="hr_manager">HR Manager</option>
+                            <option value="manager">Manager</option>
+                            <option value="employee">Employee</option>
+                            <option value="payroll_admin">Payroll Admin</option>
+                        </select>
+                    </div>
+                    <div style="overflow-x:auto;">
+                        <table style="width:100%;border-collapse:collapse;font-size:13px;">
+                            <thead>
+                                <tr style="border-bottom:2px solid var(--border);">
+                                    <th
+                                        style="padding:10px 12px;text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:0.04em;color:var(--text-muted);">
+                                        Module</th>
+                                    <th
+                                        style="padding:10px 12px;text-align:center;font-size:11px;text-transform:uppercase;color:var(--text-muted);">
+                                        View</th>
+                                    <th
+                                        style="padding:10px 12px;text-align:center;font-size:11px;text-transform:uppercase;color:var(--text-muted);">
+                                        Create</th>
+                                    <th
+                                        style="padding:10px 12px;text-align:center;font-size:11px;text-transform:uppercase;color:var(--text-muted);">
+                                        Edit</th>
+                                    <th
+                                        style="padding:10px 12px;text-align:center;font-size:11px;text-transform:uppercase;color:var(--text-muted);">
+                                        Delete</th>
+                                    <th
+                                        style="padding:10px 12px;text-align:center;font-size:11px;text-transform:uppercase;color:var(--text-muted);">
+                                        Approve</th>
+                                </tr>
+                            </thead>
+                            <tbody id="rbac-matrix-body">
+                            </tbody>
+                        </table>
+                    </div>
+                    <div style="margin-top:16px;display:flex;justify-content:flex-end;gap:10px;">
+                        <button class="btn-outline"
+                            style="padding:8px 16px;border-radius:6px;font-size:13px;cursor:pointer;background:var(--primary);color:#fff;border:none;"
+                            onclick="alert('Permissions saved successfully.')">Save Permissions</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- New Role Modal -->
+            <div id="new-role-modal"
+                style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.4);z-index:1000;align-items:center;justify-content:center;">
+                <div
+                    style="background:#fff;border-radius:16px;padding:24px;width:400px;box-shadow:0 16px 48px rgba(0,0,0,0.12);">
+                    <h3 style="font-size:18px;margin-bottom:16px;">Create New Role</h3>
+                    <div style="margin-bottom:12px;"><label
+                            style="font-size:12px;font-weight:600;display:block;margin-bottom:4px;">Role
+                            Name</label><input type="text" placeholder="e.g., Accounts Manager"
+                            style="width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:6px;font-size:14px;">
+                    </div>
+                    <div style="display:flex;gap:10px;justify-content:flex-end;">
+                        <button class="btn-outline"
+                            style="padding:8px 16px;border-radius:6px;font-size:13px;cursor:pointer;"
+                            onclick="document.getElementById('new-role-modal').style.display='none'">Cancel</button>
+                        <button class="btn-outline"
+                            style="padding:8px 16px;border-radius:6px;font-size:13px;cursor:pointer;background:var(--primary);color:#fff;border:none;"
+                            onclick="alert('Role created.');document.getElementById('new-role-modal').style.display='none'">Create</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Custom Field Builder -->
+            <div id="config-templates" class="card config-panel" style="display:none;">
+                <div class="card-header">
+                    <span class="card-title"><i class="ri-list-settings-line"
+                            style="color:var(--primary);margin-right:8px;"></i> Custom Field Builder</span>
+                </div>
+                <div style="padding:0 20px 20px;">
+                    <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;">
+                        <label style="font-size:12px;font-weight:600;color:var(--text-muted);">Office:</label>
+                        <select id="cf-office-select" class="btn-outline"
+                            style="padding:8px 12px;font-size:13px;border-radius:6px;min-width:200px;"
+                            onchange="loadCustomFields()">
+                            <option value="1">Kampala HQ</option>
+                            <option value="2">Dubai Office</option>
+                            <option value="3">Mumbai Office</option>
+                            <option value="4">Nairobi Office</option>
+                        </select>
+                    </div>
+
+                    <!-- Existing Fields List -->
+                    <div id="cf-fields-list" style="margin-bottom:24px;">
+                    </div>
+
+                    <!-- Add Field Form -->
+                    <div style="background:#f8f9fa;border:1px solid var(--border);border-radius:8px;padding:16px;">
+                        <h4 style="font-size:14px;margin-bottom:16px;"><i class="ri-add-circle-line"
+                                style="margin-right:6px;"></i> Add New Field</h4>
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+                            <div><label style="display:block;font-size:11px;font-weight:600;margin-bottom:4px;">Field
+                                    Key (Auto-generated)</label><input type="text" id="cf-key"
+                                    placeholder="e.g., nssf_number" readonly
+                                    style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px; background:#f1f5f9; cursor:not-allowed;">
+                            </div>
+                            <div><label style="display:block;font-size:11px;font-weight:600;margin-bottom:4px;">Display
+                                    Name</label><input type="text" id="cf-name" placeholder="e.g., NSSF Number"
+                                    style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px;">
+                            </div>
+                            <div><label style="display:block;font-size:11px;font-weight:600;margin-bottom:4px;">Field
+                                    Type</label>
+                                <select id="cf-type" class="btn-outline"
+                                    style="width:100%;padding:8px 10px;font-size:13px;border-radius:6px;">
+                                    <option value="text">Text</option>
+                                    <option value="number">Number</option>
+                                    <option value="date">Date</option>
+                                    <option value="boolean">Boolean (Toggle)</option>
+                                    <option value="dropdown">Dropdown</option>
+                                    <option value="json_array">JSON Array</option>
+                                </select>
+                            </div>
+                            <div><label style="display:block;font-size:11px;font-weight:600;margin-bottom:4px;">Display
+                                    Order</label><input type="number" id="cf-order" value="0"
+                                    style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px;">
+                            </div>
+                        </div>
+                        <div style="margin-top:12px;"><label
+                                style="display:block;font-size:11px;font-weight:600;margin-bottom:4px;">Options (JSON,
+                                for dropdowns)</label><input type="text" id="cf-options"
+                                placeholder='["Option 1", "Option 2"]'
+                                style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px;">
+                        </div>
+                        <div style="margin-top:12px;display:flex;align-items:center;gap:16px;">
+                            <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;"><input
+                                    type="checkbox" id="cf-required" style="accent-color:var(--primary);">
+                                Required</label>
+                            <button class="btn-outline"
+                                style="margin-left:auto;padding:8px 16px;border-radius:6px;font-size:13px;cursor:pointer;background:var(--primary);color:#fff;border:none;"
+                                onclick="addCustomField()">Add Field</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="config-supervisor" class="card config-panel" style="display:none;">
+                <div class="card-header"><span class="card-title">Nova's Approval Inbox Container</span></div>
+            </div>
+
+            <div id="config-org" class="card config-panel" style="display:none; padding:0; overflow:hidden;">
+            </div>
+
+            <!-- Financials: Exchange Rate Management -->
+            <div id="config-financials" class="card config-panel" style="display:none;">
+                <div class="card-header">
+                    <span class="card-title"><i class="ri-money-dollar-circle-line" style="margin-right:8px;"></i>
+                        Exchange Rate Management</span>
+                </div>
+                <div style="padding: 20px;">
+                    <div
+                        style="background: #f8f9fa; border: 1px solid var(--border); border-radius: 8px; padding: 16px; margin-bottom: 24px;">
+                        <h4 style="font-size: 14px; margin-bottom: 12px;">Two-Way Rate Configuration</h4>
+                        <div
+                            style="display: grid; grid-template-columns: 1fr 1fr 1fr auto; gap: 16px; align-items: end;">
+                            <div>
+                                <label
+                                    style="display:block; font-size: 11px; font-weight: 600; margin-bottom: 4px;">From
+                                    Currency</label>
+                                <select id="ex-from" class="btn-outline" style="width:100%;">
+                                    <option value="USD">USD - US Dollar</option>
+                                    <option value="KES">KES - Kenya Shilling</option>
+                                    <option value="UGX">UGX - Uganda Shilling</option>
+                                    <option value="AED">AED - UAE Dirham</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label style="display:block; font-size: 11px; font-weight: 600; margin-bottom: 4px;">To
+                                    Currency</label>
+                                <select id="ex-to" class="btn-outline" style="width:100%;">
+                                    <option value="KES">KES - Kenya Shilling</option>
+                                    <option value="USD">USD - US Dollar</option>
+                                    <option value="UGX">UGX - Uganda Shilling</option>
+                                    <option value="AED">AED - UAE Dirham</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label
+                                    style="display:block; font-size: 11px; font-weight: 600; margin-bottom: 4px;">Rate</label>
+                                <input type="number" id="ex-rate" class="btn-outline" placeholder="0.000000" step="any"
+                                    style="width:100%;">
+                            </div>
+                            <button class="btn-outline" style="background: var(--primary); color: #fff; border:none;"
+                                onclick="saveExchangeRate()">Add Rate</button>
+                        </div>
+                        <div id="ex-preview" style="margin-top: 12px; font-size: 12px; color: var(--text-muted);">
+                            Preview: 1 <span id="p-from">USD</span> = <span id="p-val">0.00</span> <span
+                                id="p-to">KES</span> | 1 <span id="p-to2">KES</span> = <span id="p-inv">0.00</span>
+                            <span id="p-from2">USD</span>
+                        </div>
+                    </div>
+
+                    <table style="width:100%; border-collapse: collapse; font-size: 13px;">
+                        <thead>
+                            <tr style="text-align: left; border-bottom: 1px solid var(--border);">
+                                <th style="padding: 12px 8px;">Pair</th>
+                                <th style="padding: 12px 8px;">Rate</th>
+                                <th style="padding: 12px 8px;">Inverse Rate</th>
+                                <th style="padding: 12px 8px;">Effective Date</th>
+                                <th style="padding: 12px 8px;">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="ex-table-body">
+                            <!-- Mock Data -->
+                            <tr>
+                                <td style="padding: 12px 8px;">USD / KES</td>
+                                <td style="padding: 12px 8px;">130.50</td>
+                                <td style="padding: 12px 8px;">0.00766</td>
+                                <td style="padding: 12px 8px;">2024-03-06</td>
+                                <td style="padding: 12px 8px;"><span class="badge badge-green">Active</span></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Global Settings -->
+            <div id="config-global" class="card config-panel" style="display:none;">
+                <div class="card-header">
+                    <span class="card-title"><i class="ri-settings-line" style="margin-right:8px;"></i> Global System
+                        Settings</span>
+                </div>
+                <div style="padding: 20px;">
+                    <div
+                        style="display: flex; justify-content: space-between; align-items: center; padding: 16px; border: 1px solid var(--border); border-radius: 8px; margin-bottom: 16px;">
+                        <div>
+                            <h4 style="font-size: 14px; margin-bottom: 4px;">Link Attendance to Payroll Calculation</h4>
+                            <p style="font-size: 12px; color: var(--text-muted);">When enabled, unpaid absences from
+                                attendance logs will be automatically deducted during payroll generation.</p>
+                        </div>
+                        <label class="switch"
+                            style="position: relative; display: inline-block; width: 44px; height: 22px;">
+                            <input type="checkbox" id="setting-payroll-attendance"
+                                style="opacity: 0; width: 0; height: 0;">
+                            <span class="slider"
+                                style="position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; border-radius: 34px;"></span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- View: Global Iframe Container for Dynamic Routing -->
+        <section id="view-iframe-container" class="view-section"
+            style="padding: 0; height: calc(100vh - 48px); overflow: hidden;">
+            <iframe id="global-iframe" src="" style="width: 100%; height: 100%; border: none;"></iframe>
+        </section>
+
+    </main>
+
+    <script>
+        // --- Dashboard Data Loading ---
+        async function loadDashboardData() {
+            try {
+                const token = localStorage.getItem('api_token');
+                const headers = { 'Content-Type': 'application/json' };
+                if (token) headers['Authorization'] = `Bearer ${token}`;
+
+                const response = await fetch('/api/employees', { headers });
+                if (response.ok) {
+                    const res = await response.json();
+                    if (res.status === 'success' && res.data) {
+                        const employees = res.data;
+                        document.getElementById('dash-total-headcount').innerText = employees.length;
+                        document.getElementById('dash-active-headcount').innerText = `Active: ${employees.filter(e => e.status === 'active').length}`;
+                        document.getElementById('dash-onboarding-count').innerText = employees.filter(e => e.status === 'onboarding').length;
+                        document.getElementById('dash-separation-count').innerText = employees.filter(e => e.status === 'terminated' || e.status === 'resigned').length;
+
+                        // Proceed to fetch attendance using total active employees
+                        loadDashboardAttendance(employees, headers);
+                    }
+                }
+
+                // Appraisals
+                const appResponse = await fetch('/api/appraisals', { headers });
+                if (appResponse.ok) {
+                    const res = await appResponse.json();
+                    if (res && res.status === 'success') {
+                        const activeCount = res.data.filter(a => a.status !== 'completed').length;
+                        document.getElementById('dash-appraisals-count').innerText = activeCount;
+                    }
+                }
+
+                // Pending Leave Approvals
+                const leaveResponse = await fetch('/api/leave?status=pending', { headers });
+                if (leaveResponse.ok) {
+                    const res = await leaveResponse.json();
+                    if (res && res.status === 'success' && res.data.length > 0) {
+                        document.getElementById('dash-pending-approvals-empty').style.display = 'none';
+                        const list = document.getElementById('dash-pending-approvals-list');
+                        list.style.display = 'block';
+                        list.innerHTML = res.data.slice(0, 5).map(req => `
+                            <div style="display:flex; justify-content:space-between; align-items:center; padding:10px 0; border-bottom:1px solid #eee;">
+                                <div>
+                                    <div style="font-size:13px; font-weight:500;">${req.first_name} ${req.last_name}</div>
+                                    <div style="font-size:11px; color:var(--text-muted);">${req.leave_type_name} • ${req.total_days} days</div>
+                                </div>
+                                <span class="badge badge-gray" style="font-size:10px; background:#f59e0b1a; color:#f59e0b;">Pending</span>
+                            </div>
+                        `).join('') + (res.data.length > 5 ? `<div style="text-align:center; padding-top:10px; font-size:12px;"><a href="#leave" class="link-text">view all ${res.data.length} pending...</a></div>` : '');
+                    }
+                }
+            } catch (error) {
+                console.error('Failed to load dashboard data:', error);
+            }
+        }
+
+        async function loadDashboardAttendance(employees, headers) {
+            try {
+                const today = new Date().toISOString().split('T')[0];
+                const response = await fetch(`/api/attendance?date=${today}`, { headers });
+                if (response.ok) {
+                    const res = await response.json();
+                    if (res && res.status === 'success') {
+                        const logs = res.data || [];
+                        const officeStats = {};
+
+                        // Initialize offices based on employees
+                        employees.forEach(emp => {
+                            if (!officeStats[emp.office_name]) {
+                                officeStats[emp.office_name] = { total: 0, present: 0, leave: 0 };
+                            }
+                            if (emp.status === 'active') {
+                                officeStats[emp.office_name].total++;
+                            }
+                        });
+
+                        // Tally logs
+                        let totalPresent = 0;
+                        let totalLeave = 0;
+                        logs.forEach(log => {
+                            if (officeStats[log.office_name]) {
+                                if (log.status === 'present' || log.status === 'late') {
+                                    officeStats[log.office_name].present++;
+                                    totalPresent++;
+                                } else if (log.status === 'on_leave') {
+                                    officeStats[log.office_name].leave++;
+                                    totalLeave++;
+                                }
+                            }
+                        });
+
+                        // Render global summary
+                        const totalActive = employees.filter(e => e.status === 'active').length;
+                        const presentPerc = totalActive > 0 ? Math.round((totalPresent / totalActive) * 100) : 0;
+                        document.getElementById('dash-attendance-perc').innerText = `${presentPerc}%`;
+                        document.getElementById('dash-attendance-count').innerText = `${totalPresent}/${totalActive} Present`;
+
+                        // Render progress bars
+                        const list = document.getElementById('dash-attendance-list');
+                        let html = '';
+                        for (const [office, stats] of Object.entries(officeStats)) {
+                            if (stats.total === 0) continue;
+                            const pPerc = Math.round((stats.present / stats.total) * 100);
+                            const lPerc = Math.round((stats.leave / stats.total) * 100);
+
+                            html += `
+                                <div class="progress-item">
+                                    <div class="progress-label">
+                                        <span>${office}</span>
+                                        <span>${stats.present}/${stats.total} (${pPerc}%)</span>
+                                    </div>
+                                    <div class="progress-track">
+                                        <div class="progress-fill fill-green" style="width: ${pPerc}%;"></div>
+                                        <div class="progress-fill fill-purple" style="width: ${lPerc}%;"></div>
+                                    </div>
+                                </div>
+                            `;
+                        }
+                        list.innerHTML = html || '<div class="empty-state" style="padding: 10px;">No attendance configured today.</div>';
+                    }
+                }
+            } catch (error) {
+                console.error('Failed to load dashboard data:', error);
+            }
+        }
+
+        // Hash Routing Logic
+        // --- RBAC Permission Matrix ---
+        const MODULES = ['Dashboard', 'Directory', 'Employees', 'Attendance', 'Leave', 'Payroll', 'Appraisals', 'Offboarding', 'Reports', 'Configuration'];
+        const ACTIONS = ['view', 'create', 'edit', 'delete', 'approve'];
+        const ROLE_PERMS = {
+            super_admin: MODULES.reduce((acc, m) => { acc[m] = ACTIONS.reduce((a2, act) => { a2[act] = true; return a2; }, {}); return acc; }, {}),
+            hr_manager: MODULES.reduce((acc, m) => { acc[m] = { view: true, create: ['Directory', 'Employees', 'Leave', 'Attendance'].includes(m), edit: ['Directory', 'Employees', 'Leave', 'Attendance'].includes(m), delete: false, approve: ['Leave', 'Attendance'].includes(m) }; return acc; }, {}),
+            manager: MODULES.reduce((acc, m) => { acc[m] = { view: ['Dashboard', 'Directory', 'Attendance', 'Leave', 'Appraisals'].includes(m), create: false, edit: false, delete: false, approve: ['Leave', 'Attendance'].includes(m) }; return acc; }, {}),
+            employee: { Dashboard: { view: true, create: false, edit: false, delete: false, approve: false }, Directory: { view: true, create: false, edit: false, delete: false, approve: false }, Employees: { view: false, create: false, edit: false, delete: false, approve: false }, Attendance: { view: true, create: true, edit: false, delete: false, approve: false }, Leave: { view: true, create: true, edit: false, delete: false, approve: false }, Payroll: { view: true, create: false, edit: false, delete: false, approve: false }, Appraisals: { view: true, create: false, edit: false, delete: false, approve: false }, Offboarding: { view: false, create: false, edit: false, delete: false, approve: false }, Reports: { view: false, create: false, edit: false, delete: false, approve: false }, Configuration: { view: false, create: false, edit: false, delete: false, approve: false } },
+            payroll_admin: MODULES.reduce((acc, m) => { acc[m] = { view: ['Dashboard', 'Directory', 'Payroll', 'Reports'].includes(m), create: m === 'Payroll', edit: m === 'Payroll', delete: false, approve: m === 'Payroll' }; return acc; }, {}),
+        };
+
+        function getCurrentRole() {
+            return localStorage.getItem('user_role') || 'super_admin';
+        }
+
+        function hasPerm(routeName) {
+            const role = getCurrentRole();
+            const perms = ROLE_PERMS[role] || {};
+
+            const routeToModule = {
+                'dashboard': 'Dashboard',
+                'configurations': 'Configuration',
+                'directory': 'Directory',
+                'attendance': 'Attendance',
+                'onboarding': 'Employees',
+                'leave': 'Leave',
+                'payroll': 'Payroll',
+                'appraisals': 'Appraisals',
+                'offboarding': 'Offboarding',
+                'reports': 'Reports',
+                'employee-profile': 'Employees'
+            };
+
+            const moduleName = routeToModule[routeName];
+            if (!moduleName) return true;
+
+            return perms[moduleName] && perms[moduleName].view;
+        }
+
+        const routeMapping = {
+            'dashboard': { viewId: 'dashboard', url: null },
+            'configurations': { viewId: 'configurations', url: null },
+            'directory': { viewId: 'iframe-container', url: 'directory.html' },
+            'attendance': { viewId: 'iframe-container', url: 'attendance.html' },
+            'onboarding': { viewId: 'iframe-container', url: 'onboarding.html' },
+            'leave': { viewId: 'iframe-container', url: 'leave.html' },
+            'payroll': { viewId: 'iframe-container', url: 'payroll.html' },
+            'appraisals': { viewId: 'iframe-container', url: 'appraisals.html' },
+            'offboarding': { viewId: 'iframe-container', url: 'offboarding.html' },
+            'reports': { viewId: 'iframe-container', url: 'reports.html' },
+            'employee-profile': { viewId: 'iframe-container', url: 'employee-profile.html' }
+        };
+
+        function handleRoute() {
+            let hash = window.location.hash.substring(1) || 'dashboard';
+
+            let routeName = hash;
+            let queryString = '';
+            if (hash.includes('?')) {
+                const parts = hash.split('?');
+                routeName = parts[0];
+                queryString = '?' + parts[1];
+            }
+
+            const route = routeMapping[routeName];
+            if (!route) return;
+
+            // RBAC Enforcement
+            if (!hasPerm(routeName)) {
+                console.warn(`Unauthorized access attempt to: ${routeName}`);
+                window.location.hash = '#dashboard';
+                return;
+            }
+
+            // Update UI Active State
+            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+            const activeNav = document.querySelector(`.nav-item[href="#${routeName}"]`);
+            if (activeNav) activeNav.classList.add('active');
+
+            // Switch View Section
+            document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
+            const viewElement = document.getElementById(`view-${route.viewId}`);
+            if (viewElement) viewElement.classList.add('active');
+
+            // Update iframe src if necessary
+            if (route.viewId === 'iframe-container' && route.url) {
+                const iframe = document.getElementById('global-iframe');
+
+                // Add cache-buster to bypass aggressive browser caching,
+                // especially helpful when reloading (Ctrl+R) the page to test new changes.
+                const cacheBuster = route.url.includes('?') ? '&cb=' : '?cb=';
+                const targetUrl = route.url + queryString + cacheBuster + new Date().getTime();
+
+                iframe.src = targetUrl;
+            }
+        }
+
+        window.addEventListener('hashchange', handleRoute);
+        window.addEventListener('DOMContentLoaded', () => {
+            handleRoute();
+            if (window.location.hash === '' || window.location.hash === '#dashboard' || window.location.pathname === '/dashboard') {
+                loadDashboardData();
+            }
+        });
+
+        // Shim for backward compatibility internally, used by iframes temporarily
+        function switchNav(viewId, url = null) {
+            if (viewId === 'iframe-container' && url) {
+                window.location.hash = '#' + url.replace('.html', '');
+            } else {
+                window.location.hash = '#' + viewId;
+            }
+        }
+
+        // Configuration Tabs Logic
+        function switchConfigTab(tabId) {
+            if (tabId === 'org') {
+                if (!document.getElementById('org-iframe')) {
+                    const iframe = document.createElement('iframe');
+                    iframe.id = 'org-iframe';
+                    iframe.src = 'organization.html';
+                    iframe.style.width = '100%';
+                    iframe.style.height = '600px';
+                    iframe.style.border = 'none';
+                    iframe.style.borderRadius = '8px';
+                    document.getElementById('config-org').appendChild(iframe);
+                }
+            }
+
+            document.querySelectorAll('.config-tab').forEach(el => el.classList.remove('active'));
+            event.currentTarget.classList.add('active');
+
+            document.querySelectorAll('.config-panel').forEach(el => el.style.display = 'none');
+            document.getElementById(`config-${tabId}`).style.display = 'block';
+        }
+
+        // Exchange Rate Logic
+        const exRateInput = document.getElementById('ex-rate');
+        if (exRateInput) {
+            ['input', 'change'].forEach(evt => {
+                exRateInput.addEventListener(evt, () => {
+                    const from = document.getElementById('ex-from').value;
+                    const to = document.getElementById('ex-to').value;
+                    const rate = parseFloat(exRateInput.value) || 0;
+                    const inverse = rate > 0 ? (1 / rate).toFixed(6) : "0.000000";
+
+                    document.getElementById('p-from').innerText = from;
+                    document.getElementById('p-from2').innerText = from;
+                    document.getElementById('p-to').innerText = to;
+                    document.getElementById('p-to2').innerText = to;
+                    document.getElementById('p-val').innerText = rate.toFixed(4);
+                    document.getElementById('p-inv').innerText = inverse;
+                });
+            });
+        }
+
+        function saveExchangeRate() {
+            const from = document.getElementById('ex-from').value;
+            const to = document.getElementById('ex-to').value;
+            const rate = parseFloat(document.getElementById('ex-rate').value);
+
+            if (!rate) return alert("Please enter a valid rate.");
+
+            const tbody = document.getElementById('ex-table-body');
+            const row = tbody.insertRow(0);
+            row.innerHTML = `
+                <td style="padding: 12px 8px;">${from} / ${to}</td>
+                <td style="padding: 12px 8px;">${rate.toFixed(4)}</td>
+                <td style="padding: 12px 8px;">${(1 / rate).toFixed(6)}</td>
+                <td style="padding: 12px 8px;">${new Date().toISOString().split('T')[0]}</td>
+                <td style="padding: 12px 8px;"><span class="badge badge-green">Active</span></td>
+            `;
+            alert("Exchange rate pair saved successfully.");
+        }
+
+        // --- RBAC UI Controller ---
+        function loadRolePermissions() {
+            const role = document.getElementById('rbac-role-select').value;
+            const perms = ROLE_PERMS[role] || {};
+            const tbody = document.getElementById('rbac-matrix-body');
+            tbody.innerHTML = MODULES.map(mod => {
+                const mp = perms[mod] || {};
+                const cells = ACTIONS.map(act =>
+                    `<td style="padding:10px 12px;text-align:center;"><input type="checkbox" ${mp[act] ? 'checked' : ''} style="width:16px;height:16px;accent-color:var(--primary);"></td>`
+                ).join('');
+                return `<tr style="border-bottom:1px solid var(--border);"><td style="padding:10px 12px;font-weight:500;">${mod}</td>${cells}</tr>`;
+            }).join('');
+        }
+        loadRolePermissions();
+
+        // --- Custom Field Builder ---
+        const MOCK_FIELDS = {
+            1: [
+                { key: 'nssf_number', name: 'NSSF Number', type: 'text', required: true, order: 1 },
+                { key: 'tin_number', name: 'TIN Number', type: 'text', required: true, order: 2 },
+                { key: 'bank_account', name: 'Bank Account', type: 'text', required: true, order: 3 },
+                { key: 'bank_name', name: 'Bank Name', type: 'dropdown', required: true, order: 4 },
+            ],
+            2: [
+                { key: 'emirates_id', name: 'Emirates ID', type: 'text', required: true, order: 1 },
+                { key: 'wps_mol_id', name: 'WPS/MOL ID', type: 'text', required: true, order: 2 },
+            ],
+            3: [
+                { key: 'pf_number', name: 'PF Number', type: 'text', required: true, order: 1 },
+                { key: 'uan', name: 'UAN', type: 'text', required: false, order: 2 },
+                { key: 'pan', name: 'PAN Card', type: 'text', required: true, order: 3 },
+            ],
+            4: [
+                { key: 'sha_number', name: 'SHA Number', type: 'text', required: true, order: 1 },
+                { key: 'nssf_ke', name: 'NSSF Number', type: 'text', required: true, order: 2 },
+                { key: 'kra_pin', name: 'KRA PIN', type: 'text', required: true, order: 3 },
+            ]
+        };
+
+        function loadCustomFields() {
+            const officeId = document.getElementById('cf-office-select').value;
+            const fields = MOCK_FIELDS[officeId] || [];
+            const container = document.getElementById('cf-fields-list');
+            if (fields.length === 0) {
+                container.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text-muted);font-size:13px;">No custom fields configured for this office.</div>';
+                return;
+            }
+            container.innerHTML = fields.map((f, i) => `
+                <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:${i % 2 === 0 ? '#fff' : '#fafbfc'};border:1px solid var(--border);border-radius:6px;margin-bottom:6px;">
+                    <div style="display:flex;align-items:center;gap:12px;">
+                        <span style="font-size:11px;color:var(--text-muted);font-family:monospace;">${f.key}</span>
+                        <span style="font-weight:500;font-size:14px;">${f.name}</span>
+                        <span class="badge badge-gray" style="font-size:10px;">${f.type}</span>
+                        ${f.required ? '<span class="badge badge-orange" style="font-size:10px;">Required</span>' : ''}
+                    </div>
+                    <div style="display:flex;gap:6px;">
+                        <button class="btn-outline" style="padding:4px 8px;font-size:11px;border-radius:4px;cursor:pointer;" onclick="alert('Edit field: ${f.name}')"><i class="ri-edit-line"></i></button>
+                        <button class="btn-outline" style="padding:4px 8px;font-size:11px;border-radius:4px;cursor:pointer;color:#dc2626;" onclick="alert('Delete field: ${f.name}')"><i class="ri-delete-bin-line"></i></button>
+                    </div>
+                </div>
+            `).join('');
+        }
+        loadCustomFields();
+
+        document.getElementById('cf-name').addEventListener('input', function (e) {
+            let val = e.target.value.toLowerCase();
+            val = val.replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
+            document.getElementById('cf-key').value = val;
+        });
+
+        function addCustomField() {
+            const key = document.getElementById('cf-key').value.trim();
+            const name = document.getElementById('cf-name').value.trim();
+            if (!key || !name) return alert('Field key and name are required.');
+            alert(`Custom field "${name}" (${key}) added successfully.`);
+            document.getElementById('cf-key').value = '';
+            document.getElementById('cf-name').value = '';
+        }
+    </script>
+
+</body>
+
+</html>

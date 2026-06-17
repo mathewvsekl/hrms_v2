@@ -1,0 +1,22 @@
+{
+    "version": "v2.8.7",
+    "notes": "v2.8.7: International phone number country code selection across employee and company contact fields.",
+    "database_schema": "DATABASE_SCHEMA.sql",
+    "build_number": "2807",
+    "modules": [
+        "organization",
+        "employee",
+        "rbac",
+        "attendance",
+        "leave_management",
+        "appraisal",
+        "assets",
+        "holidays",
+        "notifications",
+        "email_system",
+        "global_search",
+        "mobile_readiness",
+        "api_optimization"
+    ],
+    "release_date": "2026-05-20"
+}

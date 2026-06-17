@@ -1,0 +1,15 @@
+{
+    "modules":  [
+                    "organization",
+                    "employee",
+                    "rbac",
+                    "attendance",
+                    "leave_management",
+                    "appraisal",
+                    "assets"
+                ],
+    "database_schema":  "migration_patch_v1.6.10_CONSOLIDATED.sql",
+    "version":  "v1.6.10",
+    "release_date":  "2026-03-25",
+    "notes":  "v1.6.11: SECURITY HARDENED. Removed EMERGENCY_MASTER_TOKEN and hardcoded admin bypasses. Enforced mandatory multi-tenant isolation for Employees and Leave requests."
+}

@@ -1,0 +1,5 @@
+Bidirectional Control:
+If you want to refresh your local data again later, just run 
+scripts\sync_pull.bat.
+If you want to push your local changes to production, run 
+scripts\sync_push.bat (and confirm with Y).

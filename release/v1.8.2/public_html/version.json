@@ -1,0 +1,17 @@
+{
+    "version":  "v1.8.2",
+    "notes":  "v1.8.2: HRMS CLUSTER DEPLOYMENT. Cumulative production release. Includes attendance auto-persistence and audit logging enhancements.",
+    "database_schema":  "migration_patch_v1.8.2.sql",
+    "build_number":  "1802",
+    "modules":  [
+                    "organization",
+                    "employee",
+                    "rbac",
+                    "attendance",
+                    "leave_management",
+                    "appraisal",
+                    "assets",
+                    "holidays"
+                ],
+    "release_date":  "2026-03-27"
+}

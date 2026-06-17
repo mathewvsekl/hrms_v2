@@ -1,0 +1,58 @@
+﻿mysqld.exe : 2026-03-17T08:
+42:50.139814Z 0 [System] 
+[MY-010116] [Server] 
+C:\Program 
+Files\MySQL\MySQL Server 
+8.0\bin\mysqld.exe (mysqld 
+8.0.45) starting as 
+process 36292
+At line:1 char:1
++ & "C:\Program 
+Files\MySQL\MySQL Server 
+8.0\bin\mysqld.exe" 
+--console  ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~
+    + CategoryInfo         
+     : NotSpecified: (202  
+  6-03-17T08:4...s proce   
+ ss 36292:String) [], R    
+emoteException
+    + FullyQualifiedErrorI 
+   d : NativeCommandError
+ 
+2026-03-17T08:42:50.143895Z
+ 0 [Warning] [MY-010091] 
+[Server] Can't create test 
+file C:\Program 
+Files\MySQL\MySQL Server 8.
+0\data\mysqld_tmp_file_case
+_insensitive_test.lower-tes
+t
+2026-03-17T08:42:50.143979Z
+ 0 [Warning] [MY-010091] 
+[Server] Can't create test 
+file C:\Program 
+Files\MySQL\MySQL Server 8.
+0\data\mysqld_tmp_file_case
+_insensitive_test.lower-tes
+t
+2026-03-17T08:42:50.144230Z
+ 0 [ERROR] [MY-013276] 
+[Server] Failed to set 
+datadir to 'C:\Program 
+Files\MySQL\MySQL Server 
+8.0\data\' (OS errno: 2 - 
+No such file or directory)
+2026-03-17T08:42:50.144330Z
+ 0 [ERROR] [MY-010119] 
+[Server] Aborting
+2026-03-17T08:42:50.144552Z
+ 0 [System] [MY-010910] 
+[Server] C:\Program 
+Files\MySQL\MySQL Server 
+8.0\bin\mysqld.exe: 
+Shutdown complete (mysqld 
+8.0.45)  MySQL Community 
+Server - GPL.

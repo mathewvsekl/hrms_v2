@@ -1,0 +1,13 @@
+{
+    "modules":  [
+                    "organization",
+                    "employee",
+                    "onboarding",
+                    "appraisal",
+                    "rbac"
+                ],
+    "database_schema":  "database_schema_v1.6.0.sql",
+    "version":  "v1.6.0",
+    "release_date":  "2026-03-22",
+    "notes":  "V1.6.0: Resilient Production Release. Introduced modular config/config.php (excluded from build), dynamic routing, and removed blocking database modifications from controllers."
+}

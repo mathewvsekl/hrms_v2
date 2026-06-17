@@ -1,0 +1,20 @@
+{
+    "baseline":  "v1.8.5",
+    "migration_patch":  "migration_patch_v1.8.6.sql",
+    "modules":  [
+                    "organization",
+                    "employee",
+                    "rbac",
+                    "attendance",
+                    "leave_management",
+                    "appraisal",
+                    "assets",
+                    "holidays",
+                    "notifications"
+                ],
+    "database_schema":  "database_schema_v1.8.6.sql",
+    "build_number":  "1806",
+    "version":  "v1.8.6",
+    "release_date":  "2026-03-28",
+    "notes":  "v1.8.6: PRODUCTION RELEASE. Includes Centralized Notification System, Appraisal Refinements, and Enhanced Data Export."
+}

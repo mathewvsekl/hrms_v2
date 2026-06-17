@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manager Appraisal Review | HRMS V2</title>
+    <link rel="icon" type="image/svg+xml" href="avant-garde-logo.svg">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+    <link rel="stylesheet" href="shared-styles.css">
+    <style>
+        .section-card {
+            margin-bottom: 24px;
+        }
+
+        .kpi-row {
+            padding: 16px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            margin-bottom: 16px;
+            background: #fff;
+            display: flex;
+            gap: 24px;
+        }
+
+        .kpi-emp {
+            flex: 1;
+            opacity: 0.9;
+        }
+
+        .kpi-mgr {
+            flex: 1;
+            border-left: 2px solid var(--primary);
+            padding-left: 20px;
+            background: #fdfdfd;
+        }
+
+        .soft-skill-row {
+            display: flex;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px dashed var(--border);
+            gap: 16px;
+        }
+
+        .skill-slider {
+            width: 120px;
+        }
+
+        .rating-box {
+            padding: 4px 8px;
+            border-radius: 4px;
+            background: #f1f5f9;
+            font-weight: 600;
+            font-size: 14px;
+            text-align: center;
+        }
+    </style>
+</head>
+
+<body style="background: #f1f5f9;">
+    <div class="page-container" style="max-width: 1100px; margin: 0 auto; padding-top: 24px;">
+        <a href="appraisals.html"
+            style="color: var(--primary); text-decoration: none; font-size: 13px; font-weight: 500;"><i
+                class="ri-arrow-left-line"></i> Back to Dashboard</a>
+
+        <div class="page-header flex justify-between items-center" style="margin-top: 16px;">
+            <div>
+                <h1>Manager Assessment</h1>
+                <p>Reviewing Annual Appraisal 2025 for <strong>Joseph Okello</strong> (EMP0101)</p>
+            </div>
+            <div>
+                <button class="btn btn-primary" onclick="submitToHR()"><i class="ri-check-line"></i> Complete
+                    Assessment</button>
+            </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 24px; margin-bottom: 60px;">
+            <!-- LEFT COLUMN: The Review Content -->
+            <div>
+                <!-- SECTION B: KPIs -->
+                <div class="card section-card">
+                    <div class="card-header">
+                        <span class="card-title"><i class="ri-focus-2-line"
+                                style="color:var(--primary); margin-right:8px;"></i> Section B: KPIs Assessment</span>
+                    </div>
+
+                    <div class="kpi-row">
+                        <div class="kpi-emp">
+                            <h4 style="font-size: 13px; color: var(--text-muted); text-transform: uppercase;">Employee
+                                Input</h4>
+                            <div style="margin-top: 8px; font-weight: 600; font-size: 14px;">Deliver Onboarding Module
+                                by Q2</div>
+                            <p style="font-size: 13px; margin-top: 4px; color: var(--text-main);">Successfully deployed
+                                within budget, adopted by 3 offices.</p>
+                            <div style="margin-top: 12px; font-size: 12px;"><span
+                                    style="color: var(--text-muted);">Self-Rating:</span> <strong
+                                    style="color: var(--primary); font-size: 14px;">2 (Strong)</strong></div>
+                        </div>
+                        <div class="kpi-mgr">
+                            <h4 style="font-size: 13px; color: var(--primary); text-transform: uppercase;">Manager
+                                Evaluation</h4>
+                            <div class="form-group" style="margin-top: 8px; margin-bottom: 8px;">
+                                <label class="form-label" style="font-size: 12px;">Manager Comments</label>
+                                <textarea class="form-control"
+                                    rows="2">Great work on this delivery. Met all criteria.</textarea>
+                            </div>
+                            <div class="form-group" style="margin-bottom: 0;">
+                                <label class="form-label" style="font-size: 12px;">Manager Rating (1-5)</label>
+                                <select class="form-control" style="width: 100%;">
+                                    <option value="1">1 - Outstanding</option>
+                                    <option value="2" selected>2 - Strong</option>
+                                    <option value="3">3 - Effective</option>
+                                    <option value="4">4 - Developing</option>
+                                    <option value="5">5 - Below</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- KPI 2 Placeholder to show list structure -->
+                    <div class="kpi-row">
+                        <div class="kpi-emp">
+                            <h4 style="font-size: 13px; color: var(--text-muted); text-transform: uppercase;">Employee
+                                Input</h4>
+                            <div style="margin-top: 8px; font-weight: 600; font-size: 14px;">Reduce bug regression rate
+                                by 15%</div>
+                            <p style="font-size: 13px; margin-top: 4px; color: var(--text-main);">Achieved 12% reduction
+                                overall.</p>
+                            <div style="margin-top: 12px; font-size: 12px;"><span
+                                    style="color: var(--text-muted);">Self-Rating:</span> <strong
+                                    style="color: var(--primary); font-size: 14px;">3 (Effective)</strong></div>
+                        </div>
+                        <div class="kpi-mgr">
+                            <h4 style="font-size: 13px; color: var(--primary); text-transform: uppercase;">Manager
+                                Evaluation</h4>
+                            <div class="form-group" style="margin-top: 8px; margin-bottom: 8px;">
+                                <label class="form-label" style="font-size: 12px;">Manager Comments</label>
+                                <textarea class="form-control" rows="2"></textarea>
+                            </div>
+                            <div class="form-group" style="margin-bottom: 0;">
+                                <label class="form-label" style="font-size: 12px;">Manager Rating (1-5)</label>
+                                <select class="form-control" style="width: 100%;">
+                                    <option value="">Select Rating...</option>
+                                    <option value="1">1 - Outstanding</option>
+                                    <option value="2">2 - Strong</option>
+                                    <option value="3">3 - Effective</option>
+                                    <option value="4">4 - Developing</option>
+                                    <option value="5">5 - Below</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SECTION D: MANAGER FINAL -->
+                <div class="card section-card" id="section-d">
+                    <div class="card-header">
+                        <span class="card-title" style="color: #f59e0b;"><i class="ri-shield-star-line"
+                                style="margin-right:8px;"></i> Section D: Overall Performance Evaluation</span>
+                    </div>
+
+                    <div class="form-group mb-16">
+                        <label class="form-label">Overall Achievement Summary</label>
+                        <p class="text-xs text-muted" style="margin-bottom: 8px;">Summarize the employee’s performance
+                            across all KPIs.</p>
+                        <textarea class="form-control" rows="4"></textarea>
+                    </div>
+
+                    <div class="form-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                        <div class="form-group">
+                            <label class="form-label">Manager's Recommendation</label>
+                            <select class="form-control">
+                                <option>Ready for higher responsibility</option>
+                                <option selected>Consistent Performer</option>
+                                <option>Needs Development</option>
+                                <option>Not Performing</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Manager's Final Overall Rating (1-5)</label>
+                            <select class="form-control" style="border-color: #f59e0b; border-width: 2px;">
+                                <option value="">Select Final Rating...</option>
+                                <option value="1">1 - Outstanding Performance</option>
+                                <option value="2">2 - Strong Performance</option>
+                                <option value="3">3 - Effective Performance</option>
+                                <option value="4">4 - Developing Performance</option>
+                                <option value="5">5 - Performance Below Expectations</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- RIGHT COLUMN: Reference Materials -->
+            <div>
+                <!-- Soft Skills Review -->
+                <div class="card section-card" style="padding: 16px;">
+                    <div class="card-header" style="margin-bottom: 12px;">
+                        <span class="card-title" style="font-size: 13px;"><i class="ri-chat-smile-2-line"></i> Soft
+                            Skills Tracker</span>
+                    </div>
+                    <div
+                        style="font-size: 10px; color: var(--text-muted); margin-bottom: 8px; text-transform: uppercase;">
+                        Employee vs Manager (1-10)</div>
+
+                    <div class="soft-skill-row" style="padding: 8px 0;">
+                        <div style="flex:1; font-size: 12px; font-weight: 500;">Communication</div>
+                        <div class="rating-box" style="background: rgba(16,185,129,0.1); color: var(--success);"
+                            title="Self Rating">8</div>
+                        <input type="number" class="form-control" style="width: 50px; text-align: center; padding: 4px;"
+                            min="1" max="10" placeholder="M">
+                    </div>
+                    <div class="soft-skill-row" style="padding: 8px 0;">
+                        <div style="flex:1; font-size: 12px; font-weight: 500;">Teamwork</div>
+                        <div class="rating-box" style="background: rgba(16,185,129,0.1); color: var(--success);"
+                            title="Self Rating">7</div>
+                        <input type="number" class="form-control" style="width: 50px; text-align: center; padding: 4px;"
+                            min="1" max="10" placeholder="M" value="8">
+                    </div>
+                    <!-- Remaining soft skills... -->
+                </div>
+
+                <!-- Employee Summary Reference (Section C) -->
+                <div class="card section-card" style="background: #fafafa; border-style: dashed;">
+                    <div class="card-header">
+                        <span class="card-title" style="font-size: 13px;"><i class="ri-lightbulb-line"></i> Employee
+                            Summary (Sec. C)</span>
+                    </div>
+                    <div style="font-size: 12px;">
+                        <strong>Challenges Faced:</strong>
+                        <p style="color: var(--text-muted); margin-top: 4px; margin-bottom: 12px;">Delays in 3rd party
+                            API caused timeline shift for onboarding module.</p>
+
+                        <strong>Training Required:</strong>
+                        <p style="color: var(--text-muted); margin-top: 4px;">Requesting AWS certification for
+                            infrastructure updates.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+        function submitToHR() {
+            alert('Manager Assessment submitted to HR for final calibration.');
+            window.location.href = 'appraisals.html';
+        }
+    </script>
+</body>
+
+</html>

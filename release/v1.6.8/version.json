@@ -1,0 +1,14 @@
+{
+    "modules":  [
+                    "organization",
+                    "employee",
+                    "rbac",
+                    "attendance",
+                    "leave_management",
+                    "appraisal"
+                ],
+    "database_schema":  "database_schema_v1.6.8.sql",
+    "version":  "v1.6.8",
+    "release_date":  "2026-03-25",
+    "notes":  "v1.6.8: CUMULATIVE UPDATE. Includes Portal \u0026 Leave Enhancements, Appraisal Refinements, consolidated schema migrations, and critical security hotfix (Employee isolation)."
+}

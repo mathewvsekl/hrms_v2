@@ -1,0 +1,7 @@
+[
+    "Implemented 15-minute inactivity session timeout for non-admin users.",
+    "Enforced session clearing, automatic logout, and redirection to the login page with an expiration notification upon timeout.",
+    "Excluded Admin users from the inactivity timeout constraint.",
+    "Implemented inactivity timer reset logic based on user interactions.",
+    "Updated and finalized the Attendance Report functionality."
+]

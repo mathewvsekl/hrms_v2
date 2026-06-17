@@ -1,0 +1,2 @@
+-- Repair build v3.0.27-hrms-build2
+-- No database changes required for this frontend-only fix.

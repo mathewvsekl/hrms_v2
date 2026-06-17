@@ -1,0 +1,2 @@
+-- No database changes required for v3.0.30-hrms
+-- This empty patch file is generated to satisfy deployment SOP artifact requirements.

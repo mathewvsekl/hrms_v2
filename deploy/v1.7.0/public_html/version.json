@@ -1,0 +1,19 @@
+{
+    "baseline":  "v1.6.13",
+    "migration_patch":  "migration_patch_v1.7.0.sql",
+    "modules":  [
+                    "organization",
+                    "employee",
+                    "rbac",
+                    "attendance",
+                    "leave_management",
+                    "appraisal",
+                    "assets",
+                    "holidays"
+                ],
+    "database_schema":  "database_schema_v1.7.0.sql",
+    "build_number":  "1700",
+    "version":  "v1.7.0",
+    "release_date":  "2026-03-26",
+    "notes":  "v1.7.0: FULL FEATURE SYNC. Leave configuration linkage to employees, attendance color-coded progress bars, default NULL attendance status, editable status definitions, soft-deactivation, security hardening, compliance refactor. Cumulative from v1.6.13."
+}

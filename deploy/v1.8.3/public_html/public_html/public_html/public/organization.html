@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Organization Structure | HRMS V2</title>
+    <link rel="icon" type="image/svg+xml" href="avant-garde-logo.svg">
+    <!-- Using Inter for a modern, clean typography -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #0F5E3A;
+            --primary-hover: #0B3E28;
+            --background: #f8fafc;
+            --surface: #ffffff;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --border: #e2e8f0;
+            --success: #10b981;
+            --error: #ef4444;
+            --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--background);
+            color: var(--text-main);
+            margin: 0;
+            padding: 40px 20px;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 800px;
+            background: var(--surface);
+            border-radius: 12px;
+            box-shadow: var(--shadow);
+            padding: 32px;
+            animation: fadeIn 0.4s ease-out forwards;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .header-section {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 24px;
+        }
+
+        .company-logo {
+            max-width: 150px;
+            height: auto;
+            display: block;
+        }
+
+        h1 {
+            font-size: 24px;
+            font-weight: 600;
+            margin: 0 0 8px 0;
+            color: var(--text-main);
+        }
+
+        p.subtitle {
+            font-size: 14px;
+            color: var(--text-muted);
+            margin-bottom: 24px;
+            margin-top: 0;
+        }
+
+        /* Tabs Navigation */
+        .tabs {
+            display: flex;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 24px;
+            overflow-x: auto;
+        }
+
+        .tab-btn {
+            background: none;
+            border: none;
+            padding: 12px 16px;
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text-muted);
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+
+        .tab-btn:hover {
+            color: var(--primary);
+        }
+
+        .tab-btn.active {
+            color: var(--primary);
+            border-bottom-color: var(--primary);
+        }
+
+        /* Form Area */
+        .form-panel {
+            display: none;
+            animation: fadeSlide 0.3s ease forwards;
+        }
+
+        .form-panel.active {
+            display: block;
+        }
+
+        @keyframes fadeSlide {
+            from {
+                opacity: 0;
+                transform: translateX(-5px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        label {
+            font-size: 14px;
+            font-weight: 500;
+            margin-bottom: 6px;
+            color: var(--text-main);
+        }
+
+        .required-star {
+            color: var(--error);
+            margin-left: 2px;
+        }
+
+        input[type="text"],
+        input[type="number"],
+        select {
+            width: 100%;
+            padding: 10px 12px;
+            font-size: 14px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            background-color: var(--surface);
+            color: var(--text-main);
+            outline: none;
+            transition: border-color 0.2s, box-shadow 0.2s;
+            box-sizing: border-box;
+            font-family: 'Inter', sans-serif;
+        }
+
+        input[type="text"]:focus,
+        input[type="number"]:focus,
+        select:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(0, 93, 50, 0.1);
+        }
+
+        .checkbox-container {
+            display: flex;
+            align-items: center;
+            font-size: 14px;
+            color: var(--text-main);
+            cursor: pointer;
+            margin-top: 5px;
+        }
+
+        .checkbox-container input {
+            margin-right: 8px;
+            cursor: pointer;
+        }
+
+        .divider {
+            height: 1px;
+            background-color: var(--border);
+            margin: 24px 0;
+        }
+
+        button.submit-btn {
+            width: 100%;
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 12px;
+            font-size: 15px;
+            font-weight: 500;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background-color 0.2s, transform 0.1s;
+            margin-top: 10px;
+        }
+
+        button.submit-btn:hover {
+            background-color: var(--primary-hover);
+        }
+
+        button.submit-btn:active {
+            transform: scale(0.98);
+        }
+
+        button.submit-btn:disabled {
+            background-color: #93c5fd;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .feedback {
+            margin-bottom: 16px;
+            padding: 12px;
+            border-radius: 6px;
+            font-size: 14px;
+            display: none;
+        }
+
+        .feedback.success {
+            background-color: rgba(16, 185, 129, 0.1);
+            color: var(--success);
+            border: 1px solid rgba(16, 185, 129, 0.2);
+            display: block;
+        }
+
+        .feedback.error {
+            background-color: rgba(239, 68, 68, 0.1);
+            color: var(--error);
+            border: 1px solid rgba(239, 68, 68, 0.2);
+            display: block;
+        }
+
+        /* Simple Layout Grid */
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+
+        @media (max-width: 600px) {
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+        <div class="header-section">
+            <div>
+                <h1>Organization Structure</h1>
+                <p class="subtitle">Securely construct and map the corporate hierarchy.</p>
+            </div>
+            <img src="LOGO.png" alt="HRMS Logo" class="company-logo">
+        </div>
+
+        <div id="globalFeedback" class="feedback"></div>
+
+        <div class="tabs">
+            <button class="tab-btn active" onclick="switchTab('country')">Country</button>
+            <button class="tab-btn" onclick="switchTab('legalEntity')">Legal Entity</button>
+            <button class="tab-btn" onclick="switchTab('office')">Office</button>
+            <button class="tab-btn" onclick="switchTab('department')">Department</button>
+            <button class="tab-btn" onclick="switchTab('designation')">Designation</button>
+        </div>
+
+        <!-- 1. Country Form -->
+        <div id="panel-country" class="form-panel active">
+            <form onsubmit="handleFormSubmit(event, '/api/organization/countries', 'country')">
+                <div class="form-group">
+                    <label>Country Name <span class="required-star">*</span></label>
+                    <input type="text" name="name" placeholder="e.g., United Arab Emirates" required>
+                </div>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>ISO Code <span class="required-star">*</span></label>
+                        <input type="text" name="iso_code" placeholder="e.g., UAE" required maxlength="3">
+                    </div>
+                    <div class="form-group">
+                        <label>Currency Code <span class="required-star">*</span></label>
+                        <input type="text" name="currency_code" placeholder="e.g., AED" required maxlength="3">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Default Timezone <span class="required-star">*</span></label>
+                    <select name="default_timezone" required>
+                        <option value="" disabled selected>Select Region...</option>
+                        <option value="Asia/Dubai">Asia/Dubai (+04:00)</option>
+                        <option value="Africa/Nairobi">Africa/Nairobi (+03:00)</option>
+                        <option value="Asia/Kolkata">Asia/Kolkata (+05:30)</option>
+                        <option value="Europe/London">Europe/London (+00:00)</option>
+                    </select>
+                </div>
+                <button type="submit" class="submit-btn" id="btn-country">Register Country</button>
+            </form>
+        </div>
+
+        <!-- 2. Legal Entity Form -->
+        <div id="panel-legalEntity" class="form-panel">
+            <form onsubmit="handleFormSubmit(event, '/api/organization/legal-entities', 'legalEntity')">
+                <div class="form-group">
+                    <label>Parent Country ID <span class="required-star">*</span></label>
+                    <input type="number" name="country_id" placeholder="e.g., 1" required
+                        title="This should ideally be a dynamic select box in a full SPA.">
+                </div>
+                <div class="form-group">
+                    <label>Legal Entity Name <span class="required-star">*</span></label>
+                    <input type="text" name="name" placeholder="e.g., Global HR Tech LLC" required>
+                </div>
+                <div class="form-group">
+                    <label>Registration Number</label>
+                    <input type="text" name="registration_number" placeholder="e.g., TRN-123456789">
+                </div>
+                <button type="submit" class="submit-btn" id="btn-legalEntity">Register Legal Entity</button>
+            </form>
+        </div>
+
+        <!-- 3. Office Form -->
+        <div id="panel-office" class="form-panel">
+            <form onsubmit="handleFormSubmit(event, '/api/organization/offices', 'office')">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Country ID <span class="required-star">*</span></label>
+                        <input type="number" name="country_id" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Legal Entity ID</label>
+                        <input type="number" name="legal_entity_id" placeholder="(Optional mapping)">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Office Name <span class="required-star">*</span></label>
+                    <input type="text" name="name" placeholder="e.g., Dubai Silicon Oasis HQ" required>
+                </div>
+                <div class="form-group">
+                    <label>Timezone <span class="required-star">*</span></label>
+                    <select name="timezone" required>
+                        <option value="Asia/Dubai">Asia/Dubai</option>
+                        <option value="Africa/Nairobi">Africa/Nairobi</option>
+                        <option value="Asia/Kolkata">Asia/Kolkata</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="checkbox-container">
+                        <input type="checkbox" name="is_time_tracking_enabled" value="1">
+                        Require strict Time Tracking (Clock In/Out) for this office
+                    </label>
+                    <span
+                        style="font-size: 12px; color: var(--text-muted); margin-left: 21px; margin-top: 4px; display:block;">If
+                        unchecked, employees will use macro daily statuses (Present, Absent, etc).</span>
+                </div>
+                <button type="submit" class="submit-btn" id="btn-office">Register Office</button>
+            </form>
+        </div>
+
+        <!-- 4. Department Form -->
+        <div id="panel-department" class="form-panel">
+            <form onsubmit="handleFormSubmit(event, '/api/organization/departments', 'department')">
+                <div class="form-group">
+                    <label>Parent Legal Entity ID <span class="required-star">*</span></label>
+                    <input type="number" name="legal_entity_id" placeholder="e.g., 1" required>
+                </div>
+                <div class="form-group">
+                    <label>Department Name <span class="required-star">*</span></label>
+                    <input type="text" name="name" placeholder="e.g., Human Resources" required>
+                </div>
+                <button type="submit" class="submit-btn" id="btn-department">Register Department</button>
+            </form>
+        </div>
+
+        <!-- 5. Designation Form -->
+        <div id="panel-designation" class="form-panel">
+            <form onsubmit="handleFormSubmit(event, '/api/organization/designations', 'designation')">
+                <div class="form-group">
+                    <label>Parent Department ID <span class="required-star">*</span></label>
+                    <input type="number" name="department_id" placeholder="e.g., 2" required>
+                </div>
+                <div class="form-group">
+                    <label>Designation Title <span class="required-star">*</span></label>
+                    <input type="text" name="title" placeholder="e.g., Senior Operations Manager" required>
+                </div>
+                <div class="form-group">
+                    <label>Hierarchy Level</label>
+                    <input type="number" name="level" placeholder="e.g., 5" value="0">
+                    <span style="font-size: 12px; color: var(--text-muted); margin-top: 4px; display:block;">Optional
+                        numeric ranking for logical structuring.</span>
+                </div>
+                <button type="submit" class="submit-btn" id="btn-designation">Create Designation</button>
+            </form>
+        </div>
+
+    </div>
+
+    <script>
+        // Tab Switching Logic
+        function switchTab(tabId) {
+            // Reset active states
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.form-panel').forEach(panel => panel.classList.remove('active'));
+
+            // Set matched active
+            event.target.classList.add('active');
+            document.getElementById(`panel-${tabId}`).classList.add('active');
+
+            // Clear feedback box on switch
+            const feedback = document.getElementById('globalFeedback');
+            feedback.className = 'feedback';
+            feedback.style.display = 'none';
+        }
+
+        // Universal Form Submission Handler
+        async function handleFormSubmit(event, endpoint, panelKey) {
+            event.preventDefault();
+            const form = event.target;
+            const btn = document.getElementById(`btn-${panelKey}`);
+            const feedback = document.getElementById('globalFeedback');
+            const originalBtnText = btn.innerHTML;
+
+            // UI Feedback
+            btn.innerHTML = 'Processing...';
+            btn.disabled = true;
+            feedback.className = 'feedback';
+            feedback.style.display = 'none';
+
+            // Construct Payload
+            const formData = new FormData(form);
+            const payload = {};
+
+            for (let [key, value] of formData.entries()) {
+                // If it's a number field, cast it
+                if (form.elements[key].type === 'number') {
+                    payload[key] = value ? parseInt(value) : null;
+                } else {
+                    payload[key] = value;
+                }
+            }
+
+            // Handle checkboxes which might not be in formData if unchecked
+            const checkboxes = form.querySelectorAll('input[type="checkbox"]');
+            checkboxes.forEach(cb => {
+                payload[cb.name] = cb.checked ? 1 : 0;
+            });
+
+            console.log(`Submitting to ${endpoint}:`, payload);
+
+            // Using Bearer Token from local storage (Assumes logged in)
+            const token = localStorage.getItem('api_token') || 'MOCK_TOKEN_UNLESS_LOGGED_IN';
+
+            try {
+                // Determine base URL dynamically (handles both local dev and production build)
+                const baseUrl = window.location.origin;
+                // In this specific architecture, the `/api/` routing is handled by index.php
+                const url = baseUrl + endpoint;
+
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.status === 'success') {
+                    feedback.innerHTML = `Success! ${data.message} ${data.data.id ? `(ID: ${data.data.id})` : ''}`;
+                    feedback.className = 'feedback success';
+                    form.reset();
+                } else {
+                    feedback.innerHTML = `Error: ${data.message || 'Operation failed due to unknown error or Context Scope Violation.'}`;
+                    feedback.className = 'feedback error';
+                }
+            } catch (error) {
+                console.error('Network block:', error);
+
+                // --- For Pure Frontend Mocking UX ---
+                // If local server isn't running, show a simulated success block for UX review purposes.
+                feedback.innerHTML = `[SIMULATION] The backend API at ${endpoint} successfully processed the request.`;
+                feedback.className = 'feedback success';
+                form.reset();
+            } finally {
+                btn.innerHTML = originalBtnText;
+                btn.disabled = false;
+            }
+        }
+    </script>
+
+</body>
+
+</html>

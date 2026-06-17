@@ -1,0 +1,16 @@
+{
+    "version":  "v1.6.13",
+    "migration_patch":  "migration_patch_v1.6.13.sql",
+    "notes":  "v1.6.13: SOFT-DEACTIVATION RELEASE. Employee-company links now use soft-deactivation instead of hard delete. Added is_active and deactivated_at_utc columns to employee_companies. Enhanced secondary company support on Employee Profile.",
+    "database_schema":  "database_schema_v1.6.13.sql",
+    "modules":  [
+                    "organization",
+                    "employee",
+                    "rbac",
+                    "attendance",
+                    "leave_management",
+                    "appraisal",
+                    "assets"
+                ],
+    "release_date":  "2026-03-26"
+}

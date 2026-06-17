@@ -1,0 +1,13 @@
+{
+    "modules":  [
+                    "organization",
+                    "employee",
+                    "rbac",
+                    "attendance",
+                    "leave_management"
+                ],
+    "database_schema":  "database_schema_v1.6.4.sql",
+    "version":  "v1.6.4",
+    "release_date":  "2026-03-23",
+    "notes":  "v1.6.4: ATTENDANCE MODE ALIGNMENT. Fixed 500 errors by aligning frontend dropdowns with backend ENUM (time_based/status_based)."
+}

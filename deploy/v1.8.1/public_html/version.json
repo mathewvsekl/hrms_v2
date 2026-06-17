@@ -1,0 +1,17 @@
+{
+    "version":  "v1.8.1",
+    "notes":  "v1.8.0: HUMAN CAPITAL BASE SYNC. Cumulative production release from v1.7.0. Includes dashboard rebranding, attendance enhancements, and soft-deactivation.",
+    "database_schema":  "migration_patch_v1.8.1.sql",
+    "build_number":  "1800",
+    "modules":  [
+                    "organization",
+                    "employee",
+                    "rbac",
+                    "attendance",
+                    "leave_management",
+                    "appraisal",
+                    "assets",
+                    "holidays"
+                ],
+    "release_date":  "2026-03-26"
+}

@@ -1,0 +1,25 @@
+{
+  "short_name": "HRMS",
+  "name": "Avantgarde HRMS",
+  "icons": [
+    {
+      "src": "favicon.ico",
+      "sizes": "64x64 32x32 24x24 16x16",
+      "type": "image/x-icon"
+    },
+    {
+      "src": "LOGO.png",
+      "type": "image/png",
+      "sizes": "192x192"
+    },
+    {
+      "src": "LOGO.png",
+      "type": "image/png",
+      "sizes": "512x512"
+    }
+  ],
+  "start_url": ".",
+  "display": "standalone",
+  "theme_color": "#286B3E",
+  "background_color": "#FAF9F6"
+}

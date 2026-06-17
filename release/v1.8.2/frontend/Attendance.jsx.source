@@ -1,0 +1,792 @@
+import { useState, useEffect } from 'react';
+import { Search, Filter, Calendar, History, Save, Globe, Settings, Users, ClipboardList, Info, Loader, Clock, PlusCircle } from 'lucide-react';
+import api from '../services/api';
+import useAuthStore from '../store/useAuthStore';
+import AttendanceHistoryModal from '../components/AttendanceHistoryModal';
+import DateInput from '../components/ui/DateInput';
+const Attendance = () => {
+    const user = useAuthStore(state => state.user);
+    const userRole = user?.role?.toUpperCase();
+    const isAdmin = userRole === 'SUPER_ADMIN' || userRole === 'HR_MANAGER' || userRole === 'ADMIN' || userRole === 'HR_ASSISTANT';
+
+    const [activeMainTab, setActiveMainTab] = useState('log');
+    
+    const [gridData, setGridData] = useState([]);
+    const [countries, setCountries] = useState([]);
+    const [activeTab, setActiveTab] = useState('global');
+    const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+    const [loading, setLoading] = useState(true);
+    const [saving, setSaving] = useState(false);
+    const [searchTerm, setSearchTerm] = useState('');
+    const [officeConfigs, setOfficeConfigs] = useState([]);
+    const [attendanceStatuses, setAttendanceStatuses] = useState({ attendance: [], leave: [] });
+
+    // History Modal
+    const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
+    const [selectedLogId, setSelectedLogId] = useState(null);
+
+    // Track local changes in the grid
+    const [localChanges, setLocalChanges] = useState({}); // {employeeId: status}
+
+    useEffect(() => {
+        fetchCountries();
+        fetchStatuses();
+    }, []);
+
+    const fetchStatuses = async (companyId = null) => {
+        try {
+            const url = `/attendance/statuses${companyId ? `?company_id=${companyId}` : ''}`;
+            const res = await api.get(url);
+            const data = res.data?.data || res.data || {};
+            setAttendanceStatuses({
+                attendance: data.attendance || [],
+                leave: data.leave || []
+            });
+        } catch (error) {
+            console.error('Failed to fetch attendance statuses', error);
+            alert('Failed to load attendance statuses: ' + (error.response?.data?.message || error.message));
+        }
+    };
+
+    useEffect(() => {
+        fetchGridData();
+    }, [selectedDate, activeTab]);
+
+
+
+    const fetchCountries = async () => {
+        try {
+            const res = await api.get('/attendance/countries');
+            const data = res.data?.data || res.data;
+            setCountries(Array.isArray(data) ? data : []);
+        } catch (error) {
+            console.error('Failed to fetch countries', error);
+        }
+    };
+
+    const fetchGridData = async () => {
+        try {
+            setLoading(true);
+            const url = `/attendance/grid?date=${selectedDate}${activeTab !== 'global' ? `&country_id=${activeTab}` : ''}`;
+            const res = await api.get(url);
+            const data = res.data?.data || res.data;
+            setGridData(Array.isArray(data) ? data : []);
+            setLocalChanges({}); // Reset changes on new fetch
+        } catch (error) {
+            console.error('Failed to fetch grid data', error);
+            alert('Failed to load attendance log: ' + (error.response?.data?.message || error.message));
+        } finally {
+            setLoading(false);
+        }
+    };
+
+
+    const handleStatusChange = (employeeId, status) => {
+        setLocalChanges(prev => ({
+            ...prev,
+            [employeeId]: status
+        }));
+    };
+
+    const handleSaveAll = async () => {
+        // Collect all entries that have a status, whether from localChanges or from calculated defaults in the grid
+        const entries = filteredData.map(row => {
+            const status = localChanges[row.employee_id] || row.status;
+            // Only include if status is NOT "Select Status" (empty)
+            if (status) {
+                return {
+                    employee_id: row.employee_id,
+                    status: status,
+                    remarks: row.remarks // Carry over existing remarks if any
+                };
+            }
+            return null;
+        }).filter(Boolean);
+
+        if (entries.length === 0) {
+            alert('No attendance statuses to save.');
+            return;
+        }
+
+        try {
+            setSaving(true);
+            await api.post('/attendance/grid-save', {
+                attendance_date: selectedDate,
+                entries: entries
+            });
+            fetchGridData();
+            alert(`Successfully saved ${entries.length} attendance records.`);
+        } catch (error) {
+            alert('Failed to save attendance: ' + (error.response?.data?.message || error.message));
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    const handleSaveSingle = async (employeeId) => {
+        const row = gridData.find(r => r.employee_id === employeeId);
+        if (!row) return;
+
+        const status = localChanges[employeeId] || row.status;
+        if (!status) return alert('Please select a status first.');
+
+        try {
+            setSaving(true);
+            const entry = {
+                employee_id: employeeId,
+                status: status,
+                remarks: row.remarks || '',
+                is_manually_modified: localChanges[employeeId] ? 1 : 0
+            };
+
+            await api.post('/attendance/grid-save', {
+                attendance_date: selectedDate,
+                entries: [entry]
+            });
+            
+            // Clear local change for this row
+            setLocalChanges(prev => {
+                const next = { ...prev };
+                delete next[employeeId];
+                return next;
+            });
+            
+            fetchGridData();
+        } catch (error) {
+            alert('Failed to save record: ' + (error.response?.data?.message || error.message));
+        } finally {
+            setSaving(false);
+        }
+    };
+    const handleSaveOfficeConfig = async () => {
+        if (!configStatus) return;
+        
+        // Find the company ID. If country is selected, we use the first company in the grid data for that country.
+        // In a more complex setup, we'd have a company selector.
+        const companyId = gridData.find(row => row.employee_id)?.employee_id ? // Use a row to find company link
+                          (activeTab === 'global' ? null : countries.find(c => c.id === activeTab)?.id) : null;
+        
+        // Wait, the grid data has company info but not explicitly in row. Let's find a better way.
+        // For now, if activeTab is a country ID, we can assume the backend handles it or we need to pass country_id.
+        // Actually saveOfficeConfig expects company_id.
+        
+        // Let's get the first company from the grid data for accuracy
+        const firstRow = gridData[0];
+        if (!firstRow && activeTab !== 'global') {
+            alert('No employees found to determine office.');
+            return;
+        }
+
+        try {
+            setConfigSaving(true);
+            await api.post('/attendance/office-config', {
+                config_date: selectedDate,
+                status: configStatus,
+                remarks: configRemarks,
+                country_id: activeTab !== 'global' ? activeTab : null,
+                company_id: null // Let backend resolve from country_id or use default
+            });
+            setIsConfigModalOpen(false);
+            fetchGridData();
+            fetchOfficeConfigs();
+            alert('Office status updated');
+        } catch (error) {
+            alert('Failed to save office status');
+        } finally {
+            setConfigSaving(false);
+        }
+    };
+
+    const filteredData = gridData.filter(row => {
+        const fullSearch = `${row.first_name} ${row.last_name} ${row.employee_code} ${row.role_name}`.toLowerCase();
+        return fullSearch.includes(searchTerm.toLowerCase());
+    });
+
+    const getStatusStyle = (status, isSaved) => {
+        const baseStyle = {
+            border: isSaved ? '2px solid var(--border-gray)' : '2px dashed var(--border-gray)',
+            backgroundColor: isSaved ? 'white' : 'var(--bg-light)',
+            transition: 'all 0.2s'
+        };
+
+        if (!status) return baseStyle;
+        
+        const statusColors = {
+            present: '#10b981',
+            absent: '#ef4444',
+            late: '#f59e0b',
+            on_leave: '#3b82f6',
+            weekend: '#6b7280',
+            public_holiday: '#8b5cf6',
+            holiday: '#8b5cf6',
+            training: '#3b82f6',
+            on_site: '#10b981',
+            work_from_home: '#f59e0b'
+        };
+
+        const color = statusColors[status] || '#3b82f6';
+        return {
+            ...baseStyle,
+            border: isSaved ? `2px solid ${color}` : `2px dashed ${color}`,
+            boxShadow: isSaved ? `0 0 0 1px ${color}20` : 'none'
+        };
+    };
+
+    return (
+        <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '20px' }}>
+            {/* Header section matching screenshot */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '32px' }}>
+                <div>
+                    <h1 style={{ fontSize: '32px', fontWeight: '700', color: 'var(--text-main)', marginBottom: '4px' }}>Attendance Log</h1>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        <p style={{ color: 'var(--text-secondary)', fontSize: '16px', margin: 0 }}>Track presence for staff</p>
+                    </div>
+                </div>
+                <div style={{ 
+                    background: 'white', 
+                    border: '1px solid var(--border-gray)', 
+                    borderRadius: '8px', 
+                    padding: '8px 16px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '12px'
+                }}>
+                    <DateInput 
+                        value={selectedDate} 
+                        onChange={(val) => setSelectedDate(val)}
+                        style={{ border: 'none', outline: 'none', fontSize: '14px', fontWeight: '500' }}
+                    />
+                </div>
+            </div>
+
+            {/* Main Tabs Navigation */}
+            <div style={{ display: 'flex', gap: '32px', borderBottom: '1px solid var(--border-gray)', marginBottom: '24px' }}>
+                <button
+                    onClick={() => setActiveMainTab('log')}
+                    style={{
+                        padding: '12px 0',
+                        fontSize: '14px',
+                        fontWeight: '600',
+                        color: activeMainTab === 'log' ? '#065f46' : 'var(--text-secondary)',
+                        borderBottom: activeMainTab === 'log' ? '2px solid #065f46' : '2px solid transparent',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        background: 'none',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s'
+                    }}
+                >
+                    <ClipboardList size={18} /> Attendance Log
+                </button>
+                {isAdmin && (
+                    <button
+                        onClick={() => setActiveMainTab('config')}
+                        style={{
+                            padding: '12px 0',
+                            fontSize: '14px',
+                            fontWeight: '600',
+                            color: activeMainTab === 'config' ? '#065f46' : 'var(--text-secondary)',
+                            borderBottom: activeMainTab === 'config' ? '2px solid #065f46' : '2px solid transparent',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px',
+                            background: 'none',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s'
+                        }}
+                    >
+                        <Settings size={18} /> Configuration
+                    </button>
+                )}
+            </div>
+
+            {activeMainTab === 'log' ? (
+                <>
+            {/* Country Tabs */}
+            <div style={{ display: 'flex', gap: '12px', marginBottom: '32px', overflowX: 'auto', paddingBottom: '8px' }}>
+                <button 
+                    onClick={() => setActiveTab('global')}
+                    style={{
+                        padding: '8px 20px',
+                        borderRadius: '20px',
+                        border: 'none',
+                        background: activeTab === 'global' ? '#065f46' : 'white',
+                        color: activeTab === 'global' ? 'white' : 'var(--text-main)',
+                        fontWeight: '600',
+                        fontSize: '14px',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        boxShadow: activeTab === 'global' ? 'none' : '0 1px 3px rgba(0,0,0,0.1)'
+                    }}
+                >
+                    <Globe size={16} /> Global
+                </button>
+                {countries.map(country => (
+                    <button 
+                        key={country.id}
+                        onClick={() => setActiveTab(country.id)}
+                        style={{
+                            padding: '8px 20px',
+                            borderRadius: '20px',
+                            border: 'none',
+                            background: activeTab === country.id ? '#065f46' : 'white',
+                            color: activeTab === country.id ? 'white' : 'var(--text-main)',
+                            fontWeight: '600',
+                            fontSize: '14px',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px',
+                            whiteSpace: 'nowrap',
+                            boxShadow: activeTab === country.id ? 'none' : '0 1px 3px rgba(0,0,0,0.1)'
+                        }}
+                    >
+                        <span>{country.name}</span>
+                    </button>
+                ))}
+            </div>
+
+            {/* Main Content Card */}
+            <div className="card" style={{ padding: '0', overflow: 'hidden', border: '1px solid var(--border-gray)', background: 'white' }}>
+                <div style={{ padding: '20px 24px', borderBottom: '1px solid var(--border-gray)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+                        <h2 style={{ fontSize: '18px', fontWeight: '700', margin: '0' }}>Mark Attendance</h2>
+                        <div style={{ position: 'relative' }}>
+                            <Search size={16} style={{ position: 'absolute', left: '12px', top: '10px', color: 'var(--text-secondary)' }} />
+                            <input
+                                type="text"
+                                className="form-input"
+                                placeholder="Search employees..."
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                                style={{ paddingLeft: '36px', width: '250px', height: '36px', fontSize: '14px' }}
+                            />
+                        </div>
+                    </div>
+                        <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                            <div style={{ fontSize: '13px', color: 'var(--text-secondary)', marginRight: '8px' }}>
+                                {filteredData.filter(r => r.is_saved || localChanges[r.employee_id]).length} / {filteredData.length} set
+                            </div>
+                            <button className="btn btn-primary" onClick={handleSaveAll} disabled={saving}>
+                                <Save size={18} style={{marginRight: '8px'}} /> {saving ? 'Saving...' : `Save All Entries`}
+                            </button>
+                        </div>
+                    </div>
+
+                <div style={{ overflowX: 'auto' }}>
+                    <table className="data-table" style={{ width: '100%' }}>
+                        <thead style={{ background: '#f8fafc' }}>
+                            <tr>
+                                <th style={{ color: 'var(--text-secondary)', fontWeight: '600', textTransform: 'uppercase', fontSize: '12px', padding: '16px 24px' }}>Employee Name</th>
+                                <th style={{ color: 'var(--text-secondary)', fontWeight: '600', textTransform: 'uppercase', fontSize: '12px', padding: '16px 24px' }}>Role</th>
+                                <th style={{ color: 'var(--text-secondary)', fontWeight: '600', textTransform: 'uppercase', fontSize: '12px', padding: '16px 24px', textAlign: 'right' }}>Status / Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {loading ? (
+                                <tr><td colSpan="3" style={{ textAlign: 'center', padding: '40px' }}>Loading employees...</td></tr>
+                            ) : filteredData.length === 0 ? (
+                                <tr><td colSpan="3" style={{ textAlign: 'center', padding: '40px', color: 'var(--text-secondary)' }}>No employees found for this selection.</td></tr>
+                            ) : (
+                                filteredData.map((row) => (
+                                    <tr key={row.employee_id}>
+                                        <td style={{ padding: '16px 24px' }}>
+                                            <div style={{ fontWeight: '600', color: 'var(--text-main)' }}>{row.first_name} {row.last_name}</div>
+                                        </td>
+                                        <td style={{ padding: '16px 24px', color: 'var(--text-secondary)' }}>
+                                            {row.role_name || 'N/A'}
+                                        </td>
+                                        <td style={{ padding: '16px 24px', textAlign: 'right' }}>
+                                            <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: '12px' }}>
+                                                {!row.is_saved && !localChanges[row.employee_id] && row.status && (
+                                                    <div title="Suggested default" style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#f59e0b', fontSize: '11px', fontWeight: '600' }}>
+                                                        <PlusCircle size={14} /> DRAFT
+                                                    </div>
+                                                )}
+                                                {row.is_saved && !localChanges[row.employee_id] && (
+                                                    <div title="Saved record" style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#10b981', fontSize: '11px', fontWeight: '600' }}>
+                                                        <Save size={14} /> SAVED
+                                                    </div>
+                                                )}
+                                                {localChanges[row.employee_id] && (
+                                                    <div title="Manual override" style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#3b82f6', fontSize: '11px', fontWeight: '600' }}>
+                                                        <PlusCircle size={14} /> CHANGED
+                                                    </div>
+                                                )}
+                                                
+                                                {row.log_id && (
+                                                    <button 
+                                                        className="btn-icon" 
+                                                        title="History" 
+                                                        onClick={() => { setSelectedLogId(row.log_id); setIsHistoryModalOpen(true); }}
+                                                        style={{ color: 'var(--text-secondary)' }}
+                                                    >
+                                                        <History size={16} />
+                                                    </button>
+                                                )}
+                                                </div>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                    <select
+                                                        value={localChanges[row.employee_id] || row.status || ''}
+                                                        onChange={(e) => handleStatusChange(row.employee_id, e.target.value)}
+                                                        className="form-input"
+                                                        style={{ 
+                                                            width: '180px', 
+                                                            borderRadius: '8px', 
+                                                            padding: '8px 12px',
+                                                            fontWeight: '500',
+                                                            background: 'white',
+                                                            ...getStatusStyle(
+                                                                localChanges[row.employee_id] || row.status, 
+                                                                (row.is_saved && !localChanges[row.employee_id])
+                                                            )
+                                                        }}
+                                                    >
+                                                        <option value="">Select Status</option>
+                                                        <optgroup label="Attendance Types">
+                                                            {attendanceStatuses.attendance.map(s => (
+                                                                <option key={s.id} value={s.id}>{s.name}</option>
+                                                            ))}
+                                                        </optgroup>
+                                                        <optgroup label="Leave Types">
+                                                            {attendanceStatuses.leave.filter(s => {
+                                                                const restriction = s.gender_restriction?.toLowerCase() || 'none';
+                                                                const empGender = row.gender?.toLowerCase() || 'none';
+                                                                if (restriction === 'none') return true;
+                                                                return restriction === empGender;
+                                                            }).map(s => (
+                                                                <option key={s.id} value={s.id}>{s.name}</option>
+                                                            ))}
+                                                        </optgroup>
+                                                    </select>
+                                                    
+                                                    {(localChanges[row.employee_id] || !row.is_saved) && (
+                                                        <button 
+                                                            className="btn-icon" 
+                                                            title="Save this record"
+                                                            onClick={() => handleSaveSingle(row.employee_id)}
+                                                            disabled={saving}
+                                                            style={{ 
+                                                                color: '#065f46', 
+                                                                background: '#ecfdf5',
+                                                                borderRadius: '6px',
+                                                                border: '1px solid #059669',
+                                                                width: '34px',
+                                                                height: '34px',
+                                                                display: 'flex',
+                                                                alignItems: 'center',
+                                                                justifyContent: 'center'
+                                                            }}
+                                                        >
+                                                            {saving ? <Loader className="spin" size={16} /> : <Save size={16} />}
+                                                        </button>
+                                                    )}
+                                                </div>
+                                        </td>
+                                    </tr>
+                                ))
+                            )}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <AttendanceHistoryModal 
+                isOpen={isHistoryModalOpen}
+                onClose={() => setIsHistoryModalOpen(false)}
+                logId={selectedLogId}
+            />
+
+            </>
+            ) : (
+                <AttendanceConfiguration />
+            )}
+
+        </div>
+    );
+};
+
+/* ── Configuration Sub-component ────────────────────────── */
+
+const AttendanceConfiguration = () => {
+    const [companies, setCompanies] = useState([]);
+    const [selectedCompany, setSelectedCompany] = useState('');
+    const [attendanceStatuses, setAttendanceStatuses] = useState({ attendance: [], leave: [] });
+    const [weeklySchedules, setWeeklySchedules] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [saving, setSaving] = useState(false);
+    
+    const [isAdding, setIsAdding] = useState(false);
+    const [formData, setFormData] = useState({ status_key: '', status_label: '', color_code: '#3b82f6', is_default: false });
+
+    useEffect(() => {
+        fetchCompanies();
+    }, []);
+
+    useEffect(() => {
+        if (selectedCompany) {
+            fetchStatuses();
+            fetchWeeklySchedules();
+        }
+    }, [selectedCompany]);
+
+    const fetchWeeklySchedules = async () => {
+        try {
+            const res = await api.get(`/attendance/weekly-schedules?company_id=${selectedCompany}`);
+            setWeeklySchedules(res.data?.data || res.data || []);
+        } catch (error) { console.error(error); }
+    };
+
+    const fetchStatuses = async () => {
+        setLoading(true);
+        try {
+            const res = await api.get(`/attendance/statuses?company_id=${selectedCompany}`);
+            const data = res.data?.data || res.data || {};
+            setAttendanceStatuses({
+                attendance: data.attendance || [],
+                leave: data.leave || []
+            });
+        } catch (error) { console.error(error); }
+        finally { setLoading(false); }
+    };
+
+    const handleWeeklyToggle = async (day, currentStatus) => {
+        const newStatus = currentStatus === 'Workday' ? 'Weekend' : 'Workday';
+        try {
+            await api.post('/attendance/weekly-schedule', {
+                company_id: selectedCompany,
+                day_of_week: day,
+                status: newStatus
+            });
+            fetchWeeklySchedules();
+        } catch (error) {
+            console.error(error);
+            alert('Failed to update schedule');
+        }
+    };
+
+    const fetchCompanies = async () => {
+        try {
+            const res = await api.get('/organization/companies');
+            const list = res.data?.data || res.data || [];
+            setCompanies(list);
+            if (list.length > 0) setSelectedCompany(list[0].id);
+        } catch (e) { console.error(e); }
+    };
+
+    return (
+        <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
+            <div style={{ padding: '24px', borderBottom: '1px solid var(--border-gray)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#fcfcfc' }}>
+                <div>
+                    <h3 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '8px', fontSize: '18px', fontWeight: '700' }}>
+                        <Settings size={20} style={{ color: '#065f46' }} /> Attendance Architect
+                    </h3>
+                    <p style={{ margin: '4px 0 0', fontSize: '13px', color: 'var(--text-secondary)' }}>Manage office-level attendance defaults and special days</p>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <label style={{ fontSize: '14px', fontWeight: '600' }}>Office Scope:</label>
+                    <select className="form-input" style={{ width: '220px', height: '38px' }} value={selectedCompany} onChange={e => setSelectedCompany(e.target.value)}>
+                        {companies.map(c => <option key={c.id} value={c.id}>{c.name} ({c.country_name})</option>)}
+                    </select>
+                </div>
+            </div>
+
+            <div style={{ padding: '24px', minHeight: '500px' }}>
+                {/* 1. Office Weekly Schedule Section */}
+                <div style={{ marginBottom: '40px', padding: '20px', background: '#f8fafc', borderRadius: '16px', border: '1px solid var(--border-gray)' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+                        <div>
+                            <h4 style={{ margin: 0, fontSize: '16px', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                <Calendar size={18} style={{ color: '#065f46' }} /> Office Weekly Schedule
+                            </h4>
+                            <p style={{ margin: '4px 0 0', fontSize: '13px', color: 'var(--text-secondary)' }}>Define standard workdays and weekends for this office scope.</p>
+                        </div>
+                    </div>
+
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: '12px' }}>
+                        {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'].map(day => {
+                            const config = weeklySchedules.find(s => s.day_of_week === day);
+                            const isWeekend = config ? (config.status === 'Weekend' || config.status === 'Off') : (day === 'Saturday' || day === 'Sunday');
+                            
+                            return (
+                                <div 
+                                    key={day} 
+                                    style={{ 
+                                        padding: '16px', 
+                                        background: 'white', 
+                                        borderRadius: '12px', 
+                                        border: '1px solid var(--border-gray)',
+                                        display: 'flex',
+                                        flexDirection: 'column',
+                                        alignItems: 'center',
+                                        gap: '12px',
+                                        boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
+                                    }}
+                                >
+                                    <span style={{ fontWeight: '600', fontSize: '14px' }}>{day}</span>
+                                    <button
+                                        onClick={() => handleWeeklyToggle(day, isWeekend ? 'Weekend' : 'Workday')}
+                                        style={{
+                                            padding: '6px 12px',
+                                            borderRadius: '20px',
+                                            border: 'none',
+                                            background: isWeekend ? '#fef2f2' : '#ecfdf5',
+                                            color: isWeekend ? '#ef4444' : '#059669',
+                                            fontSize: '12px',
+                                            fontWeight: '700',
+                                            cursor: 'pointer',
+                                            width: '100%',
+                                            textAlign: 'center',
+                                            transition: 'all 0.2s'
+                                        }}
+                                    >
+                                        {isWeekend ? 'WEEKEND' : 'WORKDAY'}
+                                    </button>
+                                </div>
+                            );
+                        })}
+                    </div>
+                </div>
+
+                {/* 2. Attendance Status Definitions Section */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+                    <div>
+                        <h4 style={{ margin: 0, fontSize: '16px', fontWeight: '700' }}>Attendance Status Definitions</h4>
+                        <p style={{ margin: '4px 0 0', fontSize: '13px', color: 'var(--text-secondary)' }}>Define the valid attendance types for this office.</p>
+                    </div>
+                    <button className="btn btn-primary" onClick={() => {
+                        setIsAdding(!isAdding);
+                        if (!isAdding) setFormData({ status_key: '', status_label: '', color_code: '#3b82f6', is_default: false, is_edit: false });
+                    }}>
+                        <PlusCircle size={18} /> {isAdding ? 'Close Panel' : 'Add Status Type'}
+                    </button>
+                </div>
+
+                {isAdding && (
+                    <div style={{ background: '#f8fafc', padding: '20px', borderRadius: '12px', border: '1px solid var(--border-gray)', marginBottom: '24px' }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.5fr 1fr auto auto', gap: '16px', alignItems: 'end' }}>
+                            <div>
+                                <label className="form-label" style={{ fontWeight: '600' }}>Status Key</label>
+                                <input 
+                                    className="form-input" 
+                                    placeholder="e.g. on_site" 
+                                    value={formData.status_key} 
+                                    onChange={e => setFormData({...formData, status_key: e.target.value.toLowerCase().replace(/\s+/g, '_')})} 
+                                    disabled={formData.is_edit}
+                                    style={formData.is_edit ? { backgroundColor: '#f1f5f9', cursor: 'not-allowed' } : {}}
+                                />
+                            </div>
+                            <div>
+                                <label className="form-label" style={{ fontWeight: '600' }}>Label</label>
+                                <input className="form-input" placeholder="e.g. On Site" value={formData.status_label} onChange={e => setFormData({...formData, status_label: e.target.value})} />
+                            </div>
+                            <div>
+                                <label className="form-label" style={{ fontWeight: '600' }}>Color</label>
+                                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                                    <input type="color" className="form-input" style={{ width: '40px', padding: '2px', height: '38px' }} value={formData.color_code} onChange={e => setFormData({...formData, color_code: e.target.value})} />
+                                    <input className="form-input" style={{ flex: 1 }} value={formData.color_code} onChange={e => setFormData({...formData, color_code: e.target.value})} />
+                                </div>
+                            </div>
+                            <div style={{ paddingBottom: '10px' }}>
+                                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '14px' }}>
+                                    <input type="checkbox" checked={formData.is_default} onChange={e => setFormData({...formData, is_default: e.target.checked})} /> Default
+                                </label>
+                            </div>
+                            <button 
+                                className="btn btn-primary" 
+                                style={{ height: '38px', padding: '0 24px' }}
+                                onClick={async () => {
+                                    if (!selectedCompany) return alert('Please select an office context first.');
+                                    if (!formData.status_key || !formData.status_label) return alert('Key and Label are required');
+                                    setSaving(true);
+                                    try {
+                                        await api.post('/attendance/status-definitions', { ...formData, company_id: selectedCompany });
+                                        setIsAdding(false);
+                                        fetchStatuses();
+                                    } catch (e) { 
+                                        console.error('Save failed:', e.response?.data || e);
+                                        alert('Failed to save status: ' + (e.response?.data?.message || e.message)); 
+                                    }
+                                    finally { setSaving(false); }
+                                }}
+                                disabled={saving}
+                            >
+                                {saving ? <Loader className="spin" size={18} /> : 'Save'}
+                            </button>
+                        </div>
+                    </div>
+                )}
+
+                <div className="table-container" style={{ border: '1px solid var(--border-gray)', borderRadius: '12px' }}>
+                    <table className="data-table">
+                        <thead style={{ background: '#f8fafc' }}>
+                            <tr>
+                                <th>Status Key</th>
+                                <th>Label</th>
+                                <th>Default</th>
+                                <th>Indication</th>
+                                <th style={{ textAlign: 'center' }}>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {loading ? (
+                                <tr><td colSpan="5" style={{ textAlign: 'center', padding: '40px' }}><Loader className="spin" /></td></tr>
+                            ) : attendanceStatuses.attendance.length === 0 ? (
+                                <tr><td colSpan="5" style={{ textAlign: 'center', padding: '40px', color: 'var(--text-secondary)' }}>No custom statuses defined. Using system defaults.</td></tr>
+                            ) : (
+                                attendanceStatuses.attendance.map(status => (
+                                    <tr key={status.id}>
+                                        <td style={{ fontFamily: 'monospace', color: 'var(--text-secondary)' }}>{status.id}</td>
+                                        <td style={{ fontWeight: '600' }}>{status.name}</td>
+                                        <td>{status.is_default ? <span style={{ color: '#059669', fontWeight: '700' }}>YES</span> : 'No'}</td>
+                                        <td>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                <div style={{ width: '16px', height: '16px', borderRadius: '4px', background: status.color_code }}></div>
+                                                <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>{status.color_code}</span>
+                                            </div>
+                                        </td>
+                                        <td style={{ textAlign: 'center' }}>
+                                            <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
+                                                <button className="btn btn-secondary" style={{ padding: '4px 8px' }} onClick={() => {
+                                                    setFormData({ 
+                                                        status_key: status.id, 
+                                                        status_label: status.name, 
+                                                        color_code: status.color_code || '#3b82f6', 
+                                                        is_default: !!status.is_default,
+                                                        is_edit: true
+                                                    });
+                                                    setIsAdding(true);
+                                                }}>
+                                                    Edit
+                                                </button>
+                                                {status.status_id && (
+                                                    <button className="btn btn-secondary" style={{ padding: '4px 8px', color: '#ef4444' }} onClick={async () => {
+                                                        if (!window.confirm(`Delete/Reset status type "${status.name}"? This will revert to system default or remove the custom status.`)) return;
+                                                        try {
+                                                            await api.delete(`/attendance/status-definitions/${status.status_id}`);
+                                                            fetchStatuses();
+                                                        } catch (e) { 
+                                                            console.error('Delete failed:', e.response?.data || e);
+                                                            alert('Failed to delete status: ' + (e.response?.data?.message || e.message)); 
+                                                        }
+                                                    }}>
+                                                        {status.type === 'system' ? 'Reset' : 'Delete'}
+                                                    </button>
+                                                )}
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ))
+                            )}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+export default Attendance;

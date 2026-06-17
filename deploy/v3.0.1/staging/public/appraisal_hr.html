@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HR Calibration | HRMS V2</title>
+    <link rel="icon" type="image/svg+xml" href="avant-garde-logo.svg">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+    <link rel="stylesheet" href="shared-styles.css">
+    <style>
+        .hr-panel {
+            background: #fff;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 24px;
+        }
+
+        .data-label {
+            font-size: 11px;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            font-weight: 600;
+            letter-spacing: 0.05em;
+            margin-bottom: 4px;
+        }
+
+        .data-value {
+            font-size: 16px;
+            font-weight: 500;
+            color: var(--text-main);
+        }
+
+        .score-box {
+            padding: 12px 20px;
+            border-radius: 6px;
+            text-align: center;
+        }
+
+        .score-box.blue {
+            background: rgba(44, 90, 160, 0.1);
+            color: #2C5AA0;
+            border: 1px solid rgba(44, 90, 160, 0.2);
+        }
+
+        .score-box.green {
+            background: rgba(16, 185, 129, 0.1);
+            color: var(--success);
+            border: 1px solid rgba(16, 185, 129, 0.2);
+        }
+    </style>
+</head>
+
+<body style="background: #f1f5f9;">
+    <div class="page-container" style="max-width: 1000px; margin: 0 auto; padding-top: 24px;">
+        <a href="appraisals.html"
+            style="color: var(--primary); text-decoration: none; font-size: 13px; font-weight: 500;"><i
+                class="ri-arrow-left-line"></i> Back to Dashboard</a>
+
+        <div class="page-header flex justify-between items-center" style="margin-top: 16px; margin-bottom: 24px;">
+            <div>
+                <h1>HR Calibration & Finalization (Section E)</h1>
+                <p>Viewing <strong>Joseph Okello</strong> - Engineering Department</p>
+            </div>
+            <div>
+                <button class="btn btn-outline"><i class="ri-printer-line"></i> Export PDF</button>
+            </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px;">
+            <div class="score-box blue">
+                <div class="data-label" style="color: inherit;">Manager Overall Rating</div>
+                <div style="font-size: 24px; font-weight: 700;">4.0 <span style="font-size: 14px;">/ 5</span></div>
+            </div>
+            <div class="score-box blue">
+                <div class="data-label" style="color: inherit;">Soft Skills (Map)</div>
+                <div style="font-size: 24px; font-weight: 700;">82%</div>
+            </div>
+            <div class="score-box green">
+                <div class="data-label" style="color: inherit;">Final HR Rating</div>
+                <div style="font-size: 24px; font-weight: 700;">4.0 <span style="font-size: 14px;">/ 5</span></div>
+            </div>
+        </div>
+
+        <div class="hr-panel">
+            <h3 style="font-size: 16px; font-weight: 600; margin-bottom: 20px; color: var(--text-main);"><i
+                    class="ri-scales-3-line" style="color:var(--primary); margin-right:8px;"></i> HR Input & Observation
+            </h3>
+
+            <div class="form-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                <div class="form-group">
+                    <label class="form-label">Calibration Adjustment Required?</label>
+                    <select class="form-control"
+                        onchange="document.getElementById('rationale').style.display = this.value === 'Yes' ? 'block' : 'none'">
+                        <option value="No">No - Ratings are aligned</option>
+                        <option value="Yes">Yes - Manual Calibration Needed</option>
+                    </select>
+                </div>
+
+                <div class="form-group" id="rationale" style="display:none;">
+                    <label class="form-label">Calibration Rationale <span style="color:red">*</span></label>
+                    <input type="text" class="form-control" placeholder="Brief rationale if adjusted">
+                </div>
+            </div>
+
+            <div class="form-grid"
+                style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 16px; border-top: 1px solid var(--border); padding-top: 20px;">
+                <div class="form-group">
+                    <label class="form-label">Eligible for Salary Increment</label>
+                    <div style="display:flex; gap: 16px;">
+                        <label style="display:flex; align-items:center; gap:6px; cursor:pointer;"><input type="radio"
+                                name="increment" checked> Yes</label>
+                        <label style="display:flex; align-items:center; gap:6px; cursor:pointer;"><input type="radio"
+                                name="increment"> No</label>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Eligible for Annual Bonus</label>
+                    <div style="display:flex; gap: 16px;">
+                        <label style="display:flex; align-items:center; gap:6px; cursor:pointer;"><input type="radio"
+                                name="bonus" checked> Yes</label>
+                        <label style="display:flex; align-items:center; gap:6px; cursor:pointer;"><input type="radio"
+                                name="bonus"> No</label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-group" style="margin-top: 16px;">
+                <label class="form-label">HR Observations / Remarks</label>
+                <textarea class="form-control" rows="3"
+                    placeholder="Any final remarks for internal records only..."></textarea>
+            </div>
+
+            <div
+                style="margin-top: 32px; padding: 16px; background: rgba(249, 178, 51, 0.1); border: 1px solid rgba(249, 178, 51, 0.3); border-radius: 6px;">
+                <h4 style="font-size: 13px; color: #b45309; margin-bottom: 8px;"><i class="ri-alert-line"></i>
+                    Finalization Warning</h4>
+                <p style="font-size: 12px; color: #92400e;">Finalizing this appraisal will lock the record, trigger
+                    payroll flags for increment/bonus (if selected), and release the final score to the employee. This
+                    action cannot be undone.</p>
+                <div style="margin-top: 16px; text-align: right;">
+                    <button class="btn btn-outline" style="margin-right: 8px;">Save Progress</button>
+                    <button class="btn btn-primary" onclick="finalizeHR()"><i class="ri-lock-2-line"></i> Finalize
+                        Appraisal</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+        function finalizeHR() {
+            alert('Appraisal Finalized! Payroll integration triggered.');
+            window.location.href = 'appraisals.html';
+        }
+    </script>
+</body>
+
+</html>

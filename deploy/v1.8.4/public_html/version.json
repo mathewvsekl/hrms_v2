@@ -1,0 +1,19 @@
+{
+    "baseline":  "v1.8.3",
+    "migration_patch":  "migration_patch_v1.8.4.sql",
+    "modules":  [
+                    "organization",
+                    "employee",
+                    "rbac",
+                    "attendance",
+                    "leave_management",
+                    "appraisal",
+                    "assets",
+                    "holidays"
+                ],
+    "database_schema":  "database_schema_v1.8.4.sql",
+    "build_number":  "1804",
+    "version":  "v1.8.4",
+    "release_date":  "2026-03-27",
+    "notes":  "v1.8.4: All recent updates. Cumulative from v1.8.3."
+}

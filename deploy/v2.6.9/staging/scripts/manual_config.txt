@@ -1,0 +1,19 @@
+# HRMS v2.6.9 Manual Configuration Checklist
+
+1. DATABASE SETUP
+   - Create a new UTF-8 database (utf8mb4_unicode_ci).
+   - Create a user with full privileges.
+
+2. PHP REQUIREMENTS
+   - PHP 8.1+
+   - Extensions: PDO_MYSQL, MBSTRING, JSON, OPENSSL, GD, ZIP.
+
+3. SMTP / EMAIL SETUP
+   - The system is pre-configured for mail.anedins.com:587.
+   - Ensure you update MAIL_PASS in your production config.php.
+   - IMPORTANT: The web user MUST have write access to the /tmp folder for mail logging.
+
+4. FILE PERMISSIONS
+   - storage/logs: 775/777
+   - storage/uploads: 775/777
+   - public_html/tmp: 775/777 (for mail_log.txt)

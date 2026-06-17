@@ -1,0 +1,4 @@
+-- Migration Patch v2.8.6
+-- Objective: Timezone standardization and composite primary key logic fixes.
+-- Note: This release does not require any database schema mutations.
+-- The baseline schema in database_schema_v2.8.6.sql is fully consistent.

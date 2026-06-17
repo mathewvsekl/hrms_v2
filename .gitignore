@@ -1,0 +1,10 @@
+node_modules/
+vendor/
+__pycache__/
+*.log
+.env
+.DS_Store
+tmp/
+backups/
+deployments/
+scratch/

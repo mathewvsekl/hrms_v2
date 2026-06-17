@@ -1,0 +1,11 @@
+[
+    "Added include_in_payroll to employee_companies table and set to 1 for primary companies",
+    "Added company_id, reporting_currency, and exchange_rate to payroll_records table",
+    "Added currency_code, attachment, and manager_comment to salary_advances table",
+    "Changed logo_url column in companies table to LONGTEXT",
+    "Added company_id to payslips table",
+    "Added normalized_name and base_role_id columns to roles table",
+    "Standardized existing roles to HR Manager and updated all normalized_name fields",
+    "Set base_role_id for standard base roles to support hierarchical RBAC",
+    "Inserted view, create, edit, delete, approve permissions for Assets, Configuration, and Attendance modules"
+]

@@ -1,0 +1,81 @@
+{
+  "project_name": "HRMS V2",
+  "baseline_date": "2026-03-23",
+  "status": "GOLDEN_STABLE_AUDITED",
+  "version": "v1.6.4",
+  "verified_features": [
+    {
+      "feature": "Multi Country Management",
+      "status": "VERIFIED",
+      "file_location": "app/Controllers/OrganizationController.php",
+      "db_tables": ["countries"]
+    },
+    {
+      "feature": "Multi Company Architecture",
+      "status": "VERIFIED",
+      "file_location": "app/Controllers/CompanyController.php",
+      "db_tables": ["companies"]
+    },
+    {
+      "feature": "Multi-Currency Financial Base",
+      "status": "VERIFIED",
+      "file_location": "app/Controllers/CompanyController.php",
+      "db_tables": ["exchange_rates"]
+    },
+    {
+      "feature": "Employee Management",
+      "status": "VERIFIED",
+      "file_location": "app/Controllers/EmployeeController.php",
+      "db_tables": ["employees", "employee_companies"]
+    },
+    {
+      "feature": "Attendance Logic",
+      "status": "VERIFIED",
+      "file_location": "app/Controllers/AttendanceController.php",
+      "db_tables": ["attendance_logs", "attendance_policies"]
+    },
+    {
+      "feature": "Leave Management",
+      "status": "AUDITED & REMEDIATED",
+      "file_location": "app/Controllers/LeaveController.php",
+      "db_tables": ["leave_requests", "leave_types", "leave_balances"]
+    },
+    {
+      "feature": "Performance Appraisals",
+      "status": "VERIFIED",
+      "file_location": "app/Controllers/AppraisalController.php",
+      "db_tables": ["appraisal_cycles", "appraisal_templates", "employee_appraisals"]
+    },
+    {
+      "feature": "RBAC Security Layer",
+      "status": "STABLE",
+      "file_location": "app/Controllers/RbacController.php",
+      "db_tables": ["users", "roles", "permissions", "user_roles", "role_permissions"]
+    },
+    {
+      "feature": "Custom Company Fields",
+      "status": "VERIFIED",
+      "file_location": "app/Controllers/CustomFieldController.php",
+      "db_tables": ["company_custom_fields"]
+    },
+    {
+      "feature": "OTP Login",
+      "status": "STABLE",
+      "file_location": "verify_otp_flow.php",
+      "db_tables": ["users"]
+    }
+  ],
+  "missing_features": [
+    "Payroll Logic (Backend)",
+    "Salary Advance Module",
+    "Offboarding Lifecycle"
+  ],
+  "enforcement_protocols": {
+    "The Auditor Rule": "StarHRMS_AUDITOR is forbidden from deleting blocks/functions present in _snapshots/GOLDEN_v2_BASE.",
+    "The Logic Guard": "Noah_Logic_Auditor must prevent re-introduction of Old Errors referenced in previous logs.",
+    "The Tester Rule": "Maya_Simulation_Tester must use current system outputs as Pass criteria for regression."
+  },
+  "agent_mandate_gatekeeper": "StarHRMS_AUDITOR",
+  "last_stable_version": "v1.6.3"
+}
+

@@ -1,0 +1,321 @@
+HRMS SYSTEM
+AI Agent-Driven Development Guide
+Built with Google Antigravity + Python FastAPI
+Enterprise-Grade  •  Multi-Office  •  Multi-Country  •  AI-Powered
+?  Tech Stack at a Glance
+
+IDE: Google Antigravity   •   Backend: Python / FastAPI   •   Frontend: Next.js
+Database: PostgreSQL   •   AI: Gemini 3 Pro (built-in Antigravity)   •   Auth: Firebase Auth
+Task Queue: Celery + Redis   •   Deployment: Google Cloud Run
+Download Antigravity: antigravity.google/download
+
+
+PART 1: WHAT IS GOOGLE ANTIGRAVITY?
+
+Google Antigravity (released November 2025) is Google's free, agent-first development platform. Unlike traditional IDEs that offer autocomplete, Antigravity lets autonomous AI agents plan, write code, run terminal commands, test in a browser, and validate results — all with minimal manual intervention. It is the perfect IDE for your HRMS blueprint because your blueprint already defines 8 named AI agents (Eva, Liam, Sofia, etc.). Antigravity's architecture was designed for exactly this kind of multi-agent, parallel development workflow.
+
+1.1 Two Core Surfaces
+
+SurfaceWhat it does & when to use itEditor ViewFamiliar VS Code-style IDE with an agent panel on the side. Use for hands-on coding, reviewing agent-generated files, inline commands, and tab completions. Ideal for Phase 1 setup work.Agent Manager (Mission Control)Spawn and orchestrate MULTIPLE agents working in PARALLEL across different workspaces. Shows live status, Artifacts, and Inbox for approvals. This is where your 8 HRMS agents (Eva, Liam, Sofia, Noah, Maya, Aria, Oscar, Nova) will operate simultaneously.
+1.2 Key Antigravity Concepts You Will Use
+
+ConceptHow it maps to your HRMS projectArtifactsTangible agent outputs: task lists, implementation plans, screenshots, browser recordings. Nova will use Artifacts to report to the human supervisor before deployment.RulesPersistent 'system instructions' always active for every agent session. Use these to enforce RBAC rules, coding standards, database conventions, and HRMS business logic.WorkflowsSaved prompts triggered with /command. Create one per HRMS module: /build-payroll, /run-simulation, /verify-rbac, /generate-audit-report.SkillsModular knowledge packages loaded only when needed. Create a Skill per agent: Eva's payroll rules, Liam's timezone logic, Sofia's office templates. Avoids context bloat.WorkspacesOne folder = one agent workspace. Assign one agent per workspace to avoid conflicts. Each HRMS module gets its own workspace.InboxCentral notification hub where Nova posts summaries and where you approve/reject agent actions before they are merged.Plan Mode vs Fast ModePlan Mode: agent generates a full plan Artifact for review before acting. Use for complex modules. Fast Mode: instant execution for small fixes.
+
+PART 2: INSTALLING GOOGLE ANTIGRAVITY
+
+Step 1 — Download & Install
+
+  Download from: antigravity.google/download
+1. Visit antigravity.google/download — the page auto-detects your OS
+2. Download the installer (~150-400 MB depending on OS)
+? macOS: Download the Universal .dmg (supports both Intel and Apple Silicon)
+? Windows: Run the .exe installer as Administrator, allow Windows Defender SmartScreen
+? Linux (Ubuntu/Debian): Use the APT repository or .deb package
+3. Launch the installer and follow the onboarding wizard
+4. On 'Choose setup flow' — select 'Start fresh' (or import VS Code settings if you prefer)
+5. On 'Agent Manager configuration' — select Agent-assisted development (RECOMMENDED for HRMS — you stay in control but AI handles safe automations)
+6. Sign in with your personal Gmail account (NOTE: Google Workspace accounts NOT supported in preview)
+7. Select Gemini 3 Pro as your primary model — it comes pre-integrated with generous free rate limits, no API key needed
+
+Step 2 — Install the Chrome Browser Extension
+This is required so your agents can open your HRMS frontend, interact with forms, and generate browser recording Artifacts for Nova's supervisor reports.
+
+8. In Antigravity, open the Playground and type: 'go to antigravity.google'
+9. The agent will detect that the browser extension is missing and prompt you to set it up
+10. Click Setup — it opens Chrome and directs you to the extension install page
+11. Install the extension. This enables the agent to open your HRMS app, click through workflows, and capture screenshots
+
+Step 3 — Configure Security for HRMS (Important)
+Your HRMS handles sensitive payroll and employee data. Configure these security settings BEFORE giving agents access to your project:
+
+Security SettingRecommended HRMS ConfigurationTerminal Command ExecutionSet to 'Review-driven' for production DB commands. 'Auto' only for safe scaffold/install commands.Allow ListPermit: localhost, antigravity.google, googleapis.com, your Cloud Run URLs onlyDeny ListBlock all external URLs not in Allow List. Agents must not exfiltrate employee data.Browser Allow ListsOnly allow your HRMS frontend URL and Google Cloud ConsoleAgent Scope per WorkspaceEach agent workspace should only have access to its own module folder — not the entire codebase
+Access security settings: Editor View ? bottom-right 'Antigravity Settings' ? Agent Security
+
+
+PART 3: PROJECT SETUP IN ANTIGRAVITY
+
+Step 4 — Create Project Folder Structure
+In Antigravity's terminal (Ctrl+` to open), create the HRMS project:
+
+$ mkdir hrms-ai-system && cd hrms-ai-system
+$ mkdir -p backend/app/{modules,agents,models,api,core,audit}
+$ mkdir -p frontend agents/{eva,liam,sofia,noah,maya,aria,oscar,nova}
+$ mkdir -p database docs .antigravity/rules .antigravity/workflows .antigravity/skills
+Your folder structure should look like this:
+
+hrms-ai-system/
+??? backend/              # FastAPI application
+?   ??? app/
+?       ??? modules/      # HRMS modules (payroll, leave, attendance...)
+?       ??? agents/       # Agent base class + task manager
+?       ??? models/       # SQLAlchemy ORM models
+?       ??? api/          # FastAPI REST routes
+?       ??? core/         # RBAC, auth, config, security
+?       ??? audit/        # Oscar audit agent hooks
+??? frontend/             # Next.js application (React)
+??? agents/               # One folder per named AI agent
+?   ??? eva/  liam/  sofia/  noah/  maya/  aria/  oscar/  nova/
+??? database/             # Alembic migrations + seed data
+??? .antigravity/         # Antigravity customizations
+?   ??? rules/        # Global + per-workspace rules
+?   ??? workflows/    # /commands for HRMS actions
+?   ??? skills/       # One skill per HRMS module
+??? docs/                 # Blueprint, CKB, API docs
+Step 5 — Install Backend Dependencies
+
+$ cd backend
+$ pip install fastapi uvicorn sqlalchemy alembic psycopg2-binary \
+         google-generativeai firebase-admin python-jose \
+         celery redis pydantic python-multipart python-dotenv
+
+# Frontend
+$ cd ../frontend
+$ npx create-next-app@latest . --typescript --tailwind --app
+$ npm install firebase @tanstack/react-query axios
+
+PART 4: CONFIGURE ANTIGRAVITY FOR YOUR HRMS
+This is the most important Antigravity-specific section. Properly configured Rules, Workflows, and Skills mean your agents will follow HRMS business logic automatically — without you having to repeat instructions every session.
+
+Step 6 — Create Global Rules
+Rules are always-on system instructions injected into every agent session. Create .antigravity/rules/global.md with these HRMS rules:
+
+# HRMS Global Rules (always active for all agents)
+- ALWAYS store datetime values in UTC. Never store local times in the database.
+- ALWAYS use JSONB (not JSON) for custom field columns in PostgreSQL.
+- NEVER hard-code currency codes, timezones, or country rules — read from offices table.
+- EVERY database write must trigger an Oscar audit log entry.
+- RBAC must be enforced on every API endpoint via FastAPI dependency injection.
+- Agents MUST operate only within their assigned module scope (defined in RBAC config).
+- All agent actions are sandboxed — no direct writes to production DB without Nova approval.
+- Use Plan Mode for any task touching payroll or employee data.
+- Each function must have a docstring describing its RBAC scope.
+Step 7 — Create HRMS Workflows
+Workflows are /command shortcuts you trigger on demand. Create these in .antigravity/workflows/:
+
+Workflow /commandWhat it does/build-module [name]Scaffold a new HRMS module (routes, models, schemas, tests) following project conventions/run-simulationTrigger Maya to generate synthetic employee/payroll/attendance data for testing/verify-rbacTrigger Noah to validate all RBAC permissions match the blueprint specification/generate-audit-reportTrigger Oscar to produce an audit trail report for the last 7 days/check-integration [module]Trigger Aria to test cross-module workflow for specified module/supervisor-reportTrigger Nova to compile all agent outputs into a deployment readiness report/run-payroll [office_id]Trigger Eva to simulate payroll calculation for a specific office/offboarding-check [emp_id]Run full offboarding checklist: final payroll, access revocation, audit
+Step 8 — Create Agent Skills
+Skills are modular knowledge packages that load only when relevant — preventing context bloat. Create one skill per HRMS domain:
+
+Skill FileContents.antigravity/skills/payroll-skill.mdEva's rules: payroll formula logic, currency handling, deduction rules, salary advance repayment, office-specific tax rules.antigravity/skills/attendance-skill.mdLiam's rules: UTC storage, timezone conversion, shift management, biometric integration, approval workflows.antigravity/skills/employee-skill.mdSofia's rules: custom field template schema, JSONB structure, onboarding sequences, office assignment logic.antigravity/skills/verification-skill.mdNoah's rules: RBAC validation checklist, circular reporting detection algorithm, data integrity checks.antigravity/skills/audit-skill.mdOscar's rules: what events to log, log schema, immutability requirements, anomaly flag triggers.antigravity/skills/database-skill.mdGlobal: PostgreSQL naming conventions, migration patterns, JSONB query best practices, index strategy
+
+PART 5: AGENT MANAGER — YOUR 8 HRMS AGENTS IN ANTIGRAVITY
+
+This is where your blueprint's 8 named agents come to life inside Antigravity's Agent Manager. Each agent runs in its own dedicated workspace. Open Agent Manager from the top-left icon or via Cmd+Shift+A.
+
+Step 9 — Set Up Agent Workspaces
+In Agent Manager, create one workspace per agent. Each workspace maps to a specific folder in your project:
+
+AgentAntigravity WorkspaceAssigned FolderEvahrms-payroll-workspacebackend/app/modules/payroll/Liamhrms-attendance-workspacebackend/app/modules/attendance/ + leave/Sofiahrms-employee-workspacebackend/app/modules/employee/ + office/Noahhrms-verify-workspaceRead-only: entire backend/ — writes to docs/verification/Mayahrms-simulation-workspacedatabase/seeds/ + agents/maya/Ariahrms-integration-workspaceagents/aria/ — reads all modulesOscarhrms-audit-workspacebackend/app/audit/ + logs onlyNovahrms-supervisor-workspaceRead all workspaces — writes to docs/reports/
+IMPORTANT: In Antigravity Agent Manager, each workspace is isolated. Ideally one agent per workspace to avoid conflicts — exactly as your blueprint specifies.
+
+Step 10 — Using Agent Manager Inbox
+The Inbox is your approval hub. Nova posts deployment readiness summaries here. As the human supervisor (Super Admin), you review Artifacts and approve or reject before anything merges to production:
+
+12. Open Agent Manager ? Inbox
+13. Nova posts a summary Artifact after each development phase
+14. Review the Artifact: it contains task lists, implementation plans, test results, and browser recordings
+15. Leave inline feedback directly on the Artifact (like commenting on a doc) — Nova and the relevant agent will incorporate your feedback without stopping
+16. Click Approve to allow the agent's output to merge, or Reject with comments to have the agent revise
+
+Step 11 — Running Parallel Agents
+Your blueprint's biggest advantage is parallel module development. Here is how to run Eva, Liam, and Sofia simultaneously in Antigravity:
+
+17. Open Agent Manager
+18. Select Eva's workspace (hrms-payroll-workspace) ? New Task ? type your payroll module prompt
+19. Without waiting, select Liam's workspace ? New Task ? attendance module prompt
+20. Without waiting, select Sofia's workspace ? New Task ? employee/office module prompt
+21. All three agents now run asynchronously. Watch live status in Agent Manager
+22. Monitor Inbox for any approval requests or errors from any of the three agents
+23. When all three complete, trigger /check-integration to run Aria's cross-module tests
+
+Pro tip: Use Plan Mode for the first run of each module. The agent generates a Plan Artifact you can review before it writes a single line of code.
+
+
+PART 6: DATABASE DESIGN
+
+Step 12 — PostgreSQL Schema
+Your blueprint's office-level custom fields require JSONB. Here are the core tables:
+
+TableKey Design — What to tell Sofia when buildingofficesoffice_id, country_id, currency (ISO 4217), timezone (IANA), location, custom_field_templates (JSONB schema definition)employeesemployee_id, name, system_role (ENUM), payroll_office_id FK, custom_field_values (JSONB)employee_officesemployee_id + office_id composite PK, role, reporting_manager_id, payroll_flag, attendance_flag, start_date, end_date, custom_field_values (JSONB)payrollpayroll_id, employee_id, office_id, salary, currency, deductions (JSONB), allowances (JSONB), office_custom_fields (JSONB), statusleave_recordsleave_id, employee_id, office_id, leave_type, balance, request_date, approval_status, approved_byattendance_logslog_id, employee_id, office_id, check_in_utc, check_out_utc, timezone_offset, source (manual/biometric), approved_byappraisalsappraisal_id, employee_id, office_id, cycle_id, kpi_data (JSONB), manager_score, self_score, bonus (JSONB)public_holidaysholiday_id, office_id, country_id, date, paid_flag, recurrence_type, custom_field_values (JSONB)audit_logslog_id, entity_type, entity_id, action, actor_id, actor_type (user/agent), actor_name, timestamp, before_state (JSONB), after_state (JSONB)agent_taskstask_id, agent_name, module, status, input_prompt (TEXT), artifact_url, created_at, approved_by, approved_at
+Tell Sofia: 'Use JSONB for all custom_field columns. Create an Alembic migration for each table. Add indexes on employee_id, office_id, and timestamp columns.'
+
+
+PART 7: FASTAPI BACKEND DEVELOPMENT
+
+Step 13 — RBAC Implementation
+Your blueprint requires RBAC for both humans and AI agents. In FastAPI, implement as dependency injection. Tell the agent in Sofia's workspace:
+
+# Prompt to give Sofia in Agent Manager:
+# 'Create backend/app/core/rbac.py with a FastAPI dependency that:
+#  - Verifies Firebase Auth JWT token
+#  - Extracts user role from token claims
+#  - Raises 403 if role does not have permission for the requested route
+#  - Supports these roles: employee, manager, hr_manager, admin, super_admin, agent
+#  - For agent tokens, also verify module_scope claim matches the endpoint module
+#  - Every permission denial must be logged to audit_logs via Oscar hook'
+Step 14 — Module Build Order
+Build in this sequence — each module feeds into the next. Use Agent Manager to run parallel where indicated:
+
+Build OrderAgent + Notes1. Office & Employee (Sofia)Foundation for everything. Build first. Custom fields JSONB schema defined here.2. Auth & RBAC (Sofia)Secure all endpoints before building further modules.3. Attendance (Liam) — PARALLEL with #4Multi-timezone UTC storage. Liam runs this while Sofia continues employee work.4. Leave Management (Liam) — PARALLEL with #3Depends on attendance. Liam can work both modules in sequence within his workspace.5. Public Holidays (Liam)Feeds payroll and leave calculations. Simple module — fast to build.6. Payroll & Salary Advance (Eva)Most complex. Eva runs in isolation. Depends on modules 1-5 being complete.7. Appraisals (Sofia)Depends on employee and office data from module 1.8. Offboarding (Sofia + Eva)Sofia handles checklists and access revocation. Eva handles final payroll calculation.
+
+PART 8: IMPLEMENTING YOUR 8 AI AGENTS
+
+Each HRMS agent is implemented as a Python class using the Gemini API's function calling. Antigravity's Agent Manager then orchestrates these agents via workspaces.
+
+Step 15 — Agent Base Class
+Create backend/app/agents/base_agent.py. Use this prompt in Agent Manager ? agents workspace:
+
+# Prompt: 'Create a BaseHRMSAgent class with:
+#  - name, specialization, character_traits (identity from blueprint)
+#  - module_scope list (RBAC enforcement)
+#  - Gemini API client with function declarations
+#  - execute(task) method: calls Gemini, logs to Oscar, returns Artifact
+#  - sandbox flag: when True, no DB writes — simulation only
+#  - All actions auto-logged to agent_tasks table via Oscar hook'
+Step 16 — Individual Agent Prompts for Antigravity
+Use these prompts in each agent's Antigravity workspace to build them out:
+
+Agent & WorkspacePrompt to use in Agent ManagerEva — Payroll'Build Eva payroll agent: functions = calculate_payroll(office_id, period), apply_deduction(employee_id, amount, type), simulate_payroll(office_id), configure_payroll_item(office_id, item). Scope: payroll module only. Character: detail-oriented, validates every formula before executing.'Liam — Attendance'Build Liam attendance agent: functions = log_attendance(employee_id, datetime_utc, office_id), approve_attendance(log_id), configure_shift(office_id, shift_config), get_report(office_id, date_range). Must convert all times to UTC before storage.'Sofia — Employee/Office'Build Sofia employee agent: functions = create_employee(data), assign_office(employee_id, office_id), update_custom_fields(employee_id, office_id, fields), create_onboarding_template(office_id). Validate custom field schema against office template on every write.'Noah — Verification'Build Noah as read-only verification agent: functions = verify_rbac_config(), check_circular_reporting(), validate_payroll_rules(office_id), run_full_audit(). Writes only to docs/verification/. Returns structured Artifact with pass/fail results.'Maya — Simulation'Build Maya data simulation agent: functions = generate_employees(count, offices), simulate_attendance(months), simulate_leave_cycle(), generate_payroll_data(). Use Faker library. All data written to database/seeds/ only, never production tables.'Aria — Integration'Build Aria integration agent: functions = test_onboarding_to_payroll(), test_leave_affects_payroll(), test_offboarding_sequence(), simulate_multi_office_scenario(). Reads all modules, logs results as Artifact.'Oscar — Audit'Build Oscar as passive audit middleware: FastAPI middleware that intercepts all POST/PUT/DELETE requests, captures before/after state, writes to audit_logs. Also expose get_audit_trail(entity_id) and flag_anomaly(log_id) functions.'Nova — Supervisor'Build Nova as orchestrator: reads agent_tasks table, calls notify_supervisor() when tasks need approval, generates deployment readiness report as structured Artifact listing: all agent completions, Noah verification results, Maya test coverage, Aria integration results.'
+
+PART 9: NEXT.JS FRONTEND
+
+Step 17 — Build Dashboards by Role
+Use Antigravity's browser extension to have agents test each dashboard after building it. Prompt Sofia's workspace to build the frontend pages:
+
+Dashboard / PageRole + Key ComponentsEmployee DashboardEmployee role — payslip viewer, leave request form, attendance log, salary advance request, self-appraisal formManager DashboardManager role — team attendance table, leave approval queue, team KPI view, appraisal scoringHR DashboardHR Manager — employee list with office filter, payroll run trigger, leave type config, holiday calendarSuper Admin PanelFull config — office creation wizard, RBAC matrix editor, multi-currency setup, custom field template builderAgent Supervisor InterfaceHuman supervisor — Agent Manager status view, task queue, Artifact viewer, approve/reject buttons wired to Nova's InboxAudit & ReportsAll roles (RBAC-filtered) — audit log viewer, payroll reports per office, headcount by country
+Antigravity Tip: After building each page, say 'Open the browser and test the [page name] flow. Record a browser Artifact showing the happy path.' This gives you automatic visual regression tests.
+
+
+PART 10: MULTI-OFFICE, MULTI-COUNTRY, MULTI-CURRENCY
+
+Step 18 — Timezone Architecture
+
+Critical Rule: ALL datetimes stored as UTC. Convert to local time only at the display layer.
+• Attendance check-in: client sends ISO 8601 with offset ? backend converts to UTC ? stores UTC + original offset
+• Payroll cut-off dates: stored as UTC, presented in office local time on frontend
+• Leave day counting: use office timezone for date boundaries, query in UTC
+• Liam's workspace Rule: add to .antigravity/rules/attendance.md — 'Never store local times in DB'
+
+Step 19 — Multi-Currency Payroll
+• Store all salary with ISO 4217 currency code — never store as plain numbers without currency
+• Each office has its own payroll cycle in its own currency — Eva never converts between currencies
+• Super Admin consolidated report: fetch live FX rates via external API, store as snapshot alongside report
+• Eva's workspace Rule: 'Always include currency_code in every payroll calculation output'
+
+Step 20 — Office-Level Custom Fields
+This is the most architecturally unique part of your system. Implementation flow:
+
+24. Super Admin defines a custom field template for an office — stored as JSONB schema in offices.custom_field_templates
+25. When an employee is assigned to that office, their employee_offices record gets an empty custom_field_values JSONB object matching the template
+26. Sofia validates every custom field write against the office's template schema before saving
+27. Frontend dynamically renders custom field forms by reading the office template schema
+28. All HRMS module tables (payroll, attendance, leave, appraisal) have their own custom_field_values JSONB column
+
+
+PART 11: SIMULATION & TESTING
+
+Step 21 — Maya: Generate Synthetic Data
+Trigger Maya via /run-simulation in Antigravity. Maya generates:
+
+• 60-120 employees across 6+ offices in different countries
+• Each employee gets office-specific custom fields populated with realistic values
+• 3 months of attendance logs with timezone variations
+• Leave requests, approvals, and rejections per office leave policy
+• Payroll data in multiple currencies with deductions and allowances
+• Public holidays per country/office
+
+Step 22 — Aria: Cross-Module Integration Tests
+After Maya populates test data, trigger /check-integration for each workflow:
+
+• Full employee lifecycle: Onboarding ? Attendance ? Leave ? Payroll ? Offboarding
+• Multi-office transfer: employee moves from one country office to another mid-cycle
+• Salary advance repayment across multiple payroll periods
+• Leave taken during public holidays — verify correct leave balance deduction
+• RBAC boundary test: attempt cross-module access with agent tokens
+
+Step 23 — Noah: Pre-Deployment Verification
+Trigger /verify-rbac before any production deployment. Noah checks:
+
+• Every API route has correct RBAC dependency — no unprotected endpoints
+• No circular reporting chains in the employee_offices hierarchy
+• All payroll formulas produce correct output for each office's tax/allowance rules
+• All custom field values match their office's template schema
+• Oscar audit log covers 100% of write operations
+
+Noah outputs a structured Verification Artifact that Nova includes in the deployment readiness report.
+
+
+PART 12: DEPLOYMENT TO GOOGLE CLOUD
+
+Step 24 — Containerize & Deploy
+
+29. Create Dockerfile in backend/ — Python 3.11 FastAPI container
+30. Create Dockerfile in frontend/ — Next.js production container
+31. In Antigravity terminal: authenticate with Google Cloud CLI
+32. Enable Cloud Run, Cloud SQL, Artifact Registry APIs in Google Cloud Console
+33. Push container images to Google Artifact Registry
+34. Deploy backend to Cloud Run with environment variables (DB URL, Firebase config)
+35. Deploy frontend to Cloud Run or Firebase Hosting
+36. Set up Cloud SQL PostgreSQL instance (managed, auto-backup, scalable)
+
+Step 25 — Nova's Deployment Approval Flow
+Before going live, Nova orchestrates final approval via the Supervisor Interface:
+
+37. Trigger /supervisor-report — Nova compiles all agent outputs
+38. Nova posts deployment readiness Artifact to Agent Manager Inbox
+39. Artifact contains: module completion status, Noah verification results, Maya test coverage, Aria integration pass/fail, Oscar audit trail coverage
+40. Human supervisor (you) reviews Artifact in Antigravity Inbox
+41. Approve each module — Nova marks it as cleared for deployment
+42. Oscar logs the deployment event as an immutable audit record
+43. Nova triggers Cloud Run deployment for approved modules
+
+
+PART 13: DEVELOPMENT TIMELINE
+
+Phase & TimelineDeliverablesPhase 1: Setup (Week 1)Antigravity installed + configured, project structure created, Global Rules + Workflows + Skills set up, PostgreSQL schema designedPhase 2: Foundation (Week 2-3)Sofia builds: Employee & Office modules, custom fields JSONB, Firebase Auth, RBAC middleware, Oscar audit hooksPhase 3: Attendance & Leave (Week 4-5)Liam builds: Multi-timezone attendance, leave management, public holidays, approval workflowsPhase 4: Payroll (Week 6-8)Eva builds: Multi-currency payroll engine, salary advance, office-specific formulas. Most complex phase.Phase 5: Appraisals & Offboarding (Week 9)Sofia + Eva: Appraisal KPI templates, offboarding checklists, final payroll, access revocationPhase 6: Agent Ecosystem (Week 10-11)Noah, Maya, Aria, Oscar, Nova fully built. Task Manager implemented. Supervisor Interface in frontend.Phase 7: Simulation (Week 12)Maya generates 120-employee dataset. Aria runs all integration tests. Noah verifies RBAC + data integrity.Phase 8: Frontend Polish (Week 13)All role-based dashboards complete. Antigravity browser agent tests each page flow and records Artifacts.Phase 9: Deployment (Week 14)Nova deployment approval flow. Cloud Run deployment. Oscar logs go-live event. Production ready.
+
+PART 14: QUICK REFERENCE
+
+Day 1 Checklist
+44. Download Antigravity from antigravity.google/download
+45. Sign in with personal Gmail (not Workspace)
+46. Install Chrome browser extension
+47. Configure security: Allow List, Deny List, Review-driven terminal for DB commands
+48. Create project folder structure with 8 agent subfolders
+49. Create .antigravity/rules/global.md with HRMS rules (UTC, JSONB, RBAC, Audit)
+50. Create 8 agent workspaces in Agent Manager
+51. Start with Sofia's workspace: build Employee + Office module first
+
+Key Antigravity Shortcuts
+ActionShortcut / HowOpen Agent ManagerCmd+Shift+A or click Agent Manager icon (top-left)Toggle terminalCtrl+` (backtick)Toggle agent panelCmd+LTrigger a workflowType /workflow-name in the agent chatSwitch Plan / Fast modeClick mode selector in agent chat headerView Inbox (Nova reports)Agent Manager ? Inbox tabOpen customizations (Rules/Workflows)... menu top-right ? Customizations
+Critical Rules — Never Forget
+• Never store local times in the database — always UTC
+• Never hard-code currency, timezone, or country logic — always read from offices table
+• Never skip RBAC on an endpoint — agents and humans equally restricted
+• Never give agents access outside their assigned workspace folder
+• Always enable Oscar audit logging FIRST — retrofitting is painful
+• Always use Plan Mode for payroll and employee data changes
+• Always run Noah verification before any production deployment
+
+Build with Google Antigravity. Your 8 agents are your development team. You are the architect.
+antigravity.google/download

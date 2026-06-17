@@ -1,0 +1,21 @@
+{
+    "modules": [
+        "organization",
+        "employee",
+        "rbac",
+        "attendance",
+        "leave_management",
+        "appraisal",
+        "assets",
+        "holidays",
+        "notifications",
+        "email_system",
+        "global_search",
+        "mobile_readiness",
+        "api_optimization"
+    ],
+    "database_schema": "database_schema_v2.8.7.sql",
+    "version": "v2.8.7",
+    "release_date": "2026-05-20",
+    "notes": "v2.8.7: International country code phone number selection across employee and company contact fields."
+}

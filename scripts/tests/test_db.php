@@ -1,0 +1,1 @@
+<?php require 'config/database.php'; $db = Database::getInstance()->getConnection(); print_r($db->query('SELECT company_id, status_key FROM office_attendance_status_definitions')->fetchAll(PDO::FETCH_ASSOC));

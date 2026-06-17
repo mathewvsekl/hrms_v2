@@ -1,0 +1,21 @@
+{
+  "name": "avantgarde-hrms-v2",
+  "version": "2.7.3",
+  "description": "Enterprise HRMS with Orion Orchestration",
+  "main": "index.php",
+  "directories": {
+    "test": "tests"
+  },
+  "scripts": {
+    "build": "powershell -ExecutionPolicy Bypass -File .\\build_deploy.ps1",
+    "build:frontend": "cd frontend && npm run build",
+    "sync:push": "scripts\\sync_push.bat",
+    "sync:pull": "scripts\\sync_pull.bat",
+    "tunnel": "scripts\\start_tunnel.bat",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs"
+}

@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Payroll Center | HRMS V2</title>
+    <link rel="icon" type="image/svg+xml" href="avant-garde-logo.svg">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+    <link rel="stylesheet" href="shared-styles.css">
+    <style>
+        .payroll-summary-bar {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 12px;
+            padding: 20px;
+            background: linear-gradient(135deg, #1e293b, #334155);
+            border-radius: var(--radius-lg);
+            margin-bottom: 20px;
+            color: #fff;
+        }
+
+        .ps-item {
+            text-align: center;
+        }
+
+        .ps-item .ps-val {
+            font-size: 22px;
+            font-weight: 700;
+        }
+
+        .ps-item .ps-label {
+            font-size: 11px;
+            opacity: 0.6;
+            margin-top: 2px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="page-container">
+        <div class="page-header flex justify-between items-center">
+            <div>
+                <h1>Payroll Center</h1>
+                <p>Multi-currency payroll processing and salary management</p>
+            </div>
+            <button class="btn btn-primary" onclick="ModalManager.open('gen-payroll-modal')">
+                <i class="ri-play-circle-line"></i> Generate Payroll
+            </button>
+        </div>
+
+        <!-- Summary Bar -->
+        <div class="payroll-summary-bar">
+            <div class="ps-item">
+                <div class="ps-val">23</div>
+                <div class="ps-label">Total Employees</div>
+            </div>
+            <div class="ps-item">
+                <div class="ps-val">UGX</div>
+                <div class="ps-label">Base Currency</div>
+            </div>
+            <div class="ps-item">
+                <div class="ps-val">4</div>
+                <div class="ps-label">Currencies Active</div>
+            </div>
+            <div class="ps-item">
+                <div class="ps-val">0</div>
+                <div class="ps-label">Pending Runs</div>
+            </div>
+            <div class="ps-item">
+                <div class="ps-val">1</div>
+                <div class="ps-label">Active Advances</div>
+            </div>
+        </div>
+
+        <!-- Tabs -->
+        <div id="payroll-tabs">
+            <div class="tab-nav">
+                <div class="tab-item active" data-tab="runs">Payroll Runs</div>
+                <div class="tab-item" data-tab="payslips">Employee Payslips</div>
+                <div class="tab-item" data-tab="structures">Salary Structures</div>
+                <div class="tab-item" data-tab="advances">Salary Advances</div>
+            </div>
+
+            <!-- Payroll Runs -->
+            <div class="tab-panel active" data-tab="runs">
+                <div class="toolbar">
+                    <div class="toolbar-group">
+                        <select class="form-control form-control-sm" style="width:200px;">
+                            <option value="">All Offices</option>
+                            <option>Kampala HQ</option>
+                            <option>Dubai Office</option>
+                            <option>Nairobi Office</option>
+                            <option>Mumbai Office</option>
+                        </select>
+                        <select class="form-control form-control-sm" style="width:120px;">
+                            <option>2026</option>
+                            <option>2025</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="card" style="padding:0;overflow:hidden;">
+                    <div id="runs-table"></div>
+                </div>
+            </div>
+
+            <!-- Employee Payslips -->
+            <div class="tab-panel" data-tab="payslips">
+                <div class="toolbar">
+                    <div class="toolbar-group">
+                        <select class="form-control form-control-sm" id="payslip-run-select" style="width:300px;">
+                            <option value="">Select a payroll run...</option>
+                            <option value="1">Kampala HQ — February 2026 (Completed)</option>
+                            <option value="2">Dubai Office — February 2026 (Completed)</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="card" style="padding:0;overflow:hidden;">
+                    <div id="payslips-table"></div>
+                </div>
+            </div>
+
+            <!-- Salary Structures -->
+            <div class="tab-panel" data-tab="structures">
+                <div class="toolbar">
+                    <div class="toolbar-group">
+                        <div class="search-input">
+                            <i class="ri-search-line"></i>
+                            <input type="text" class="form-control form-control-sm" placeholder="Search by employee..."
+                                style="padding-left:36px;width:260px;">
+                        </div>
+                    </div>
+                    <div class="toolbar-group">
+                        <button class="btn btn-primary btn-sm" onclick="ModalManager.open('add-salary-modal')"><i
+                                class="ri-add-line"></i> Add Structure</button>
+                    </div>
+                </div>
+                <div class="card" style="padding:0;overflow:hidden;">
+                    <div id="structures-table"></div>
+                </div>
+            </div>
+
+            <!-- Salary Advances -->
+            <div class="tab-panel" data-tab="advances">
+                <div class="toolbar">
+                    <div class="toolbar-group">
+                        <select class="form-control form-control-sm" style="width:160px;">
+                            <option value="">All Statuses</option>
+                            <option value="pending">Pending</option>
+                            <option value="approved">Approved</option>
+                            <option value="deducted">Deducted</option>
+                            <option value="rejected">Rejected</option>
+                        </select>
+                    </div>
+                    <div class="toolbar-group">
+                        <button class="btn btn-primary btn-sm" onclick="ModalManager.open('new-advance-modal')"><i
+                                class="ri-add-line"></i> New Advance</button>
+                    </div>
+                </div>
+                <div class="card" style="padding:0;overflow:hidden;">
+                    <div id="advances-table"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Generate Payroll Modal -->
+    <div class="modal-overlay" id="gen-payroll-modal">
+        <div class="modal" style="max-width:480px;">
+            <div class="modal-header">
+                <h2>Generate Payroll Run</h2><button class="modal-close"><i class="ri-close-line"></i></button>
+            </div>
+            <div class="modal-body">
+                <form id="gen-form" onsubmit="genPayroll(event)">
+                    <div class="form-group">
+                        <label class="form-label">Office <span class="required">*</span></label>
+                        <select class="form-control" required>
+                            <option value="">Select office...</option>
+                            <option>Kampala HQ</option>
+                            <option>Dubai Office</option>
+                            <option>Nairobi Office</option>
+                            <option>Mumbai Office</option>
+                        </select>
+                    </div>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label class="form-label">Month <span class="required">*</span></label>
+                            <select class="form-control" required>
+                                <option value="1">January</option>
+                                <option value="2">February</option>
+                                <option value="3" selected>March</option>
+                                <option value="4">April</option>
+                                <option value="5">May</option>
+                                <option value="6">June</option>
+                                <option value="7">July</option>
+                                <option value="8">August</option>
+                                <option value="9">September</option>
+                                <option value="10">October</option>
+                                <option value="11">November</option>
+                                <option value="12">December</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Year <span class="required">*</span></label>
+                            <select class="form-control" required>
+                                <option>2026</option>
+                                <option>2025</option>
+                            </select>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline"
+                    onclick="ModalManager.close('gen-payroll-modal')">Cancel</button>
+                <button type="submit" form="gen-form" class="btn btn-primary"><i class="ri-play-circle-line"></i>
+                    Generate</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Salary Structure Modal -->
+    <div class="modal-overlay" id="add-salary-modal">
+        <div class="modal" style="max-width:480px;">
+            <div class="modal-header">
+                <h2>Add Salary Structure</h2><button class="modal-close"><i class="ri-close-line"></i></button>
+            </div>
+            <div class="modal-body">
+                <form id="salary-form" onsubmit="addSalary(event)">
+                    <div class="form-group">
+                        <label class="form-label">Employee <span class="required">*</span></label>
+                        <select class="form-control" required>
+                            <option value="">Select...</option>
+                            <option>Joseph Okello</option>
+                            <option>Atim Grace</option>
+                            <option>Raj Patel</option>
+                        </select>
+                    </div>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label class="form-label">Base Salary <span class="required">*</span></label>
+                            <input type="number" class="form-control" placeholder="0.00" step="0.01" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Currency <span class="required">*</span></label>
+                            <select class="form-control" required>
+                                <option>UGX</option>
+                                <option>KES</option>
+                                <option>AED</option>
+                                <option>INR</option>
+                                <option>USD</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Effective Date <span class="required">*</span></label>
+                        <input type="date" class="form-control" required>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline"
+                    onclick="ModalManager.close('add-salary-modal')">Cancel</button>
+                <button type="submit" form="salary-form" class="btn btn-primary"><i class="ri-check-line"></i>
+                    Save</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- New Salary Advance Modal -->
+    <div class="modal-overlay" id="new-advance-modal">
+        <div class="modal" style="max-width:480px;">
+            <div class="modal-header">
+                <h2>New Salary Advance</h2><button class="modal-close"><i class="ri-close-line"></i></button>
+            </div>
+            <div class="modal-body">
+                <form id="advance-form" onsubmit="addAdvance(event)">
+                    <div class="form-group">
+                        <label class="form-label">Employee <span class="required">*</span></label>
+                        <select class="form-control" required>
+                            <option value="">Select...</option>
+                            <option>Joseph Okello</option>
+                            <option>Atim Grace</option>
+                            <option>Raj Patel</option>
+                        </select>
+                    </div>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label class="form-label">Amount <span class="required">*</span></label>
+                            <input type="number" class="form-control" placeholder="0.00" step="0.01" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Currency</label>
+                            <select class="form-control">
+                                <option>UGX</option>
+                                <option>KES</option>
+                                <option>AED</option>
+                                <option>USD</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Reason</label>
+                        <input type="text" class="form-control" placeholder="Optional reason for advance">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline"
+                    onclick="ModalManager.close('new-advance-modal')">Cancel</button>
+                <button type="submit" form="advance-form" class="btn btn-primary"><i class="ri-send-plane-line"></i>
+                    Submit</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="table-component.js"></script>
+    <script>
+        new TabSystem('#payroll-tabs');
+
+        // Payroll Runs
+        new DataTable('#runs-table', {
+            columns: [
+                { key: 'office', label: 'Office', sortable: true, primary: true },
+                { key: 'period', label: 'Period', sortable: true },
+                { key: 'employees', label: 'Employees', sortable: true },
+                { key: 'total_gross', label: 'Total Gross', sortable: true },
+                { key: 'total_net', label: 'Total Net', sortable: true },
+                { key: 'currency', label: 'Currency' },
+                { key: 'status', label: 'Status', sortable: true },
+                { key: 'processed_at', label: 'Processed', sortable: true }
+            ],
+            data: [
+                { office: 'Kampala HQ', period: 'Feb 2026', employees: 10, total_gross: '45,000,000', total_net: '38,250,000', currency: 'UGX', status: 'completed', processed_at: '2026-02-28' },
+                { office: 'Dubai Office', period: 'Feb 2026', employees: 7, total_gross: '84,000', total_net: '75,600', currency: 'AED', status: 'paid', processed_at: '2026-02-28' },
+                { office: 'Nairobi Office', period: 'Feb 2026', employees: 2, total_gross: '320,000', total_net: '272,000', currency: 'KES', status: 'completed', processed_at: '2026-02-28' },
+                { office: 'Kampala HQ', period: 'Mar 2026', employees: 10, total_gross: '—', total_net: '—', currency: 'UGX', status: 'draft', processed_at: '—' },
+            ],
+            renderCell: { status: (val) => statusBadge(val) }
+        });
+
+        // Payslips
+        new DataTable('#payslips-table', {
+            columns: [
+                { key: 'employee', label: 'Employee', sortable: true, primary: true },
+                { key: 'gross', label: 'Gross Amount', sortable: true },
+                { key: 'deductions', label: 'Deductions' },
+                { key: 'net', label: 'Net Amount', sortable: true },
+                { key: 'currency', label: 'Currency' },
+                { key: 'exchange_rate', label: 'Exchange Rate' }
+            ],
+            data: [
+                { employee: 'Joseph Okello', gross: '4,500,000', deductions: '765,000', net: '3,735,000', currency: 'UGX', exchange_rate: '1.0000' },
+                { employee: 'Atim Grace', gross: '3,200,000', deductions: '544,000', net: '2,656,000', currency: 'UGX', exchange_rate: '1.0000' },
+                { employee: 'Faith Nakamya', gross: '2,800,000', deductions: '476,000', net: '2,324,000', currency: 'UGX', exchange_rate: '1.0000' },
+            ]
+        });
+
+        // Structures
+        new DataTable('#structures-table', {
+            columns: [
+                { key: 'employee', label: 'Employee', sortable: true, primary: true },
+                { key: 'base_salary', label: 'Base Salary', sortable: true },
+                { key: 'currency', label: 'Currency', sortable: true },
+                { key: 'effective_date', label: 'Effective Date', sortable: true },
+                { key: 'status', label: 'Status' }
+            ],
+            data: [
+                { employee: 'Joseph Okello', base_salary: '4,500,000', currency: 'UGX', effective_date: '2024-01-01', status: 'active' },
+                { employee: 'Atim Grace', base_salary: '3,200,000', currency: 'UGX', effective_date: '2023-06-15', status: 'active' },
+                { employee: 'Raj Patel', base_salary: '850,000', currency: 'INR', effective_date: '2024-01-10', status: 'active' },
+                { employee: 'Sarah Wanjiku', base_salary: '280,000', currency: 'KES', effective_date: '2024-02-20', status: 'active' },
+                { employee: 'Omar Al-Rashid', base_salary: '12,000', currency: 'AED', effective_date: '2024-03-01', status: 'active' },
+            ],
+            renderCell: { status: (val) => statusBadge(val) }
+        });
+
+        // Salary Advances
+        new DataTable('#advances-table', {
+            columns: [
+                { key: 'employee', label: 'Employee', sortable: true, primary: true },
+                { key: 'amount', label: 'Amount', sortable: true },
+                { key: 'currency', label: 'Currency' },
+                { key: 'reason', label: 'Reason' },
+                { key: 'request_date', label: 'Date', sortable: true },
+                { key: 'status', label: 'Status', sortable: true },
+                { key: 'actions', label: 'Actions' }
+            ],
+            data: [
+                { employee: 'Atim Grace', amount: '500,000', currency: 'UGX', reason: 'Medical emergency', request_date: '2026-03-01', status: 'pending' },
+                { employee: 'Joseph Okello', amount: '1,000,000', currency: 'UGX', reason: 'School fees', request_date: '2026-02-15', status: 'approved' },
+                { employee: 'Raj Patel', amount: '50,000', currency: 'INR', reason: 'Personal', request_date: '2026-02-10', status: 'deducted' },
+            ],
+            renderCell: {
+                status: (val) => {
+                    const map = { pending: 'badge-orange', approved: 'badge-green', deducted: 'badge-gray', rejected: 'badge-red' };
+                    return `<span class="badge ${map[val] || 'badge-gray'}">${val.charAt(0).toUpperCase() + val.slice(1)}</span>`;
+                },
+                actions: (val, row) => {
+                    if (row.status === 'pending') {
+                        return `<div class="cell-actions">
+                            <button class="btn btn-success btn-sm" onclick="event.stopPropagation()"><i class="ri-check-line"></i></button>
+                            <button class="btn btn-danger btn-sm" onclick="event.stopPropagation()"><i class="ri-close-line"></i></button>
+                        </div>`;
+                    }
+                    return '—';
+                }
+            }
+        });
+
+        function genPayroll(e) { e.preventDefault(); alert('Payroll run created in draft status.'); ModalManager.close('gen-payroll-modal'); }
+        function addSalary(e) { e.preventDefault(); alert('Salary structure saved.'); ModalManager.close('add-salary-modal'); }
+        function addAdvance(e) { e.preventDefault(); alert('Salary advance submitted.'); ModalManager.close('new-advance-modal'); }
+    </script>
+</body>
+
+</html>

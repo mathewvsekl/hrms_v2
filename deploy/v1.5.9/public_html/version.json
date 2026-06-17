@@ -1,0 +1,13 @@
+{
+    "modules":  [
+                    "organization",
+                    "employee",
+                    "onboarding",
+                    "appraisal",
+                    "rbac"
+                ],
+    "database_schema":  "database_schema_v1.5.9.sql",
+    "version":  "v1.5.9",
+    "release_date":  "2026-03-22",
+    "notes":  "V1.5.8: Added getallheaders polyfill for production 500 fix and baseline stabilization."
+}

@@ -1,0 +1,7 @@
+﻿=== HRMS V2 Maya Audit Simulation (v1.6.6) ===
+
+TEST: Employee Read Leakage (Unscoped) ... [31mFAILED[0m (Leak Detected: Regular employee can read any profile via API.)
+TEST: Attendance Boundary Enforced (Country Manager) ... [31mFAILED[0m (Failed: Country Manager was not blocked from out-of-bounds Company ID.)
+TEST: RBAC Security Enforcement (Non-SuperAdmin cannot create SuperAdmin) ... [31mFAILED[0m (Security Vulnerability: Non-SuperAdmin created a SuperAdmin user.)
+
+Audit Simulation Summary: Done.

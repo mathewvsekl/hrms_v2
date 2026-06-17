@@ -1,0 +1,13 @@
+{
+    "modules":  [
+                    "organization",
+                    "employee",
+                    "rbac",
+                    "attendance",
+                    "leave_management"
+                ],
+    "database_schema":  "database_schema_v1.6.5.sql",
+    "version":  "v1.6.5",
+    "release_date":  "2026-03-24",
+    "notes":  "v1.6.5: ATTENDANCE MODULE ENHANCEMENTS. Added office-level configs, weekly schedules, custom statuses, and approval workflow. Fixed grid 500 errors."
+}

@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Leave Management | HRMS V2</title>
+    <link rel="icon" type="image/svg+xml" href="avant-garde-logo.svg">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+    <link rel="stylesheet" href="shared-styles.css">
+</head>
+
+<body>
+    <div class="page-container">
+        <div class="page-header flex justify-between items-center">
+            <div>
+                <h1>Leave Management</h1>
+                <p>Manage requests, balances, and leave policies</p>
+            </div>
+            <button class="btn btn-primary" onclick="ModalManager.open('new-leave-modal')">
+                <i class="ri-add-line"></i> New Request
+            </button>
+        </div>
+
+        <!-- Stats -->
+        <div class="stats-row">
+            <div class="stat-card">
+                <div class="stat-icon orange"><i class="ri-time-line"></i></div>
+                <div>
+                    <div class="stat-value" id="stat-pending">3</div>
+                    <div class="stat-label">Pending Requests</div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon green"><i class="ri-checkbox-circle-line"></i></div>
+                <div>
+                    <div class="stat-value" id="stat-approved">12</div>
+                    <div class="stat-label">Approved This Month</div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon purple"><i class="ri-umbrella-line"></i></div>
+                <div>
+                    <div class="stat-value" id="stat-on-leave">2</div>
+                    <div class="stat-label">Currently On Leave</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tabs -->
+        <div id="leave-tabs">
+            <div class="tab-nav">
+                <div class="tab-item active" data-tab="requests">Leave Requests</div>
+                <div class="tab-item" data-tab="balances">Employee Balances</div>
+                <div class="tab-item" data-tab="types">Leave Types & Policies</div>
+            </div>
+
+            <!-- Requests Tab -->
+            <div class="tab-panel active" data-tab="requests">
+                <div class="toolbar">
+                    <div class="toolbar-group">
+                        <div class="search-input">
+                            <i class="ri-search-line"></i>
+                            <input type="text" class="form-control form-control-sm" placeholder="Search by employee..."
+                                style="padding-left:36px;width:250px;" id="search-requests">
+                        </div>
+                        <select class="form-control form-control-sm" style="width:160px;" id="filter-req-status">
+                            <option value="">All Statuses</option>
+                            <option value="pending">Pending</option>
+                            <option value="approved">Approved</option>
+                            <option value="rejected">Rejected</option>
+                            <option value="cancelled">Cancelled</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="card" style="padding:0;overflow:hidden;">
+                    <div id="requests-table"></div>
+                </div>
+            </div>
+
+            <!-- Balances Tab -->
+            <div class="tab-panel" data-tab="balances">
+                <div class="toolbar">
+                    <div class="toolbar-group">
+                        <select class="form-control form-control-sm" style="width:120px;">
+                            <option>2026</option>
+                            <option>2025</option>
+                        </select>
+                        <select class="form-control form-control-sm" style="width:200px;">
+                            <option value="">All Offices</option>
+                            <option>Kampala HQ</option>
+                            <option>Dubai Office</option>
+                            <option>Nairobi Office</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="card" style="padding:0;overflow:hidden;">
+                    <div id="balances-table"></div>
+                </div>
+            </div>
+
+            <!-- Types & Policies Tab -->
+            <div class="tab-panel" data-tab="types">
+                <div class="toolbar">
+                    <div class="toolbar-group"><span class="text-sm text-muted">Manage leave types and office-specific
+                            policies</span></div>
+                    <div class="toolbar-group">
+                        <button class="btn btn-primary btn-sm" onclick="ModalManager.open('add-type-modal')"><i
+                                class="ri-add-line"></i> Add Leave Type</button>
+                    </div>
+                </div>
+                <div class="card" style="padding:0;overflow:hidden;">
+                    <div id="types-table"></div>
+                </div>
+
+                <div class="mb-24"></div>
+
+                <div class="card-header" style="padding:0 0 16px 0;">
+                    <span class="card-title"><i class="ri-settings-3-line"></i> Office Leave Policies</span>
+                </div>
+                <div class="card" style="padding:0;overflow:hidden;">
+                    <div id="holidays-table"></div>
+                </div>
+
+                <!-- Add Holiday Modal Button -->
+                <div class="mt-24" style="text-align:right;">
+                    <button class="btn btn-primary btn-sm" onclick="ModalManager.open('add-holiday-modal')">
+                        <i class="ri-add-line"></i> Add Holiday
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- New Leave Request Modal -->
+    <div class="modal-overlay" id="new-leave-modal">
+        <div class="modal">
+            <div class="modal-header">
+                <h2>New Leave Request</h2>
+                <button class="modal-close"><i class="ri-close-line"></i></button>
+            </div>
+            <div class="modal-body">
+                <form id="leave-form" onsubmit="submitLeave(event)">
+                    <div class="form-group">
+                        <label class="form-label">Employee <span class="required">*</span></label>
+                        <select class="form-control" name="employee_id" required>
+                            <option value="">Select employee...</option>
+                            <option value="1">Joseph Okello</option>
+                            <option value="2">Atim Grace</option>
+                            <option value="3">Raj Patel</option>
+                            <option value="4">Sarah Wanjiku</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Leave Type <span class="required">*</span></label>
+                        <select class="form-control" name="leave_type_id" required>
+                            <option value="">Select type...</option>
+                            <option value="1">Annual Leave</option>
+                            <option value="2">Sick Leave</option>
+                            <option value="3">Maternity Leave</option>
+                            <option value="4">Compassionate Leave</option>
+                        </select>
+                    </div>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label class="form-label">Start Date <span class="required">*</span></label>
+                            <input type="date" class="form-control" name="start_date" required id="leave-start">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">End Date <span class="required">*</span></label>
+                            <input type="date" class="form-control" name="end_date" required id="leave-end">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Total Days</label>
+                        <input type="text" class="form-control" id="leave-total" readonly value="0"
+                            style="background:var(--border-light);">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline"
+                    onclick="ModalManager.close('new-leave-modal')">Cancel</button>
+                <button type="submit" form="leave-form" class="btn btn-primary"><i class="ri-send-plane-line"></i>
+                    Submit Request</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Leave Type Modal -->
+    <div class="modal-overlay" id="add-type-modal">
+        <div class="modal" style="max-width:480px;">
+            <div class="modal-header">
+                <h2>Add Leave Type</h2>
+                <button class="modal-close"><i class="ri-close-line"></i></button>
+            </div>
+            <div class="modal-body">
+                <form id="type-form" onsubmit="addLeaveType(event)">
+                    <div class="form-group">
+                        <label class="form-label">Name <span class="required">*</span></label>
+                        <input type="text" class="form-control" name="name" placeholder="e.g., Paternity Leave"
+                            required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Code <span class="required">*</span></label>
+                        <input type="text" class="form-control" name="code" placeholder="e.g., PAT" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-check"><input type="checkbox" name="is_paid" checked> Paid Leave</label>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline"
+                    onclick="ModalManager.close('add-type-modal')">Cancel</button>
+                <button type="submit" form="type-form" class="btn btn-primary"><i class="ri-check-line"></i>
+                    Create</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Holiday Modal -->
+    <div class="modal-overlay" id="add-holiday-modal">
+        <div class="modal" style="max-width:480px;">
+            <div class="modal-header">
+                <h2>Add Public Holiday</h2>
+                <button class="modal-close"><i class="ri-close-line"></i></button>
+            </div>
+            <div class="modal-body">
+                <form id="holiday-form" onsubmit="addHoliday(event)">
+                    <div class="form-group">
+                        <label class="form-label">Office <span class="required">*</span></label>
+                        <select class="form-control" name="office_id" required>
+                            <option value="1">Kampala HQ</option>
+                            <option value="2">Nairobi Office</option>
+                            <option value="3">Dubai Office</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Holiday Name <span class="required">*</span></label>
+                        <input type="text" class="form-control" name="name" placeholder="e.g., Independence Day"
+                            required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Date <span class="required">*</span></label>
+                        <input type="date" class="form-control" name="holiday_date" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-check"><input type="checkbox" name="is_recurring"> Recurring Yearly</label>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline"
+                    onclick="ModalManager.close('add-holiday-modal')">Cancel</button>
+                <button type="submit" form="holiday-form" class="btn btn-primary"><i class="ri-check-line"></i> Add
+                    Holiday</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="table-component.js"></script>
+    <script>
+        new TabSystem('#leave-tabs');
+
+        let requestsTable, balancesTable, typesTable, policiesTable, holidaysTable;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            initTables();
+            loadAllData();
+        });
+
+        function initTables() {
+            requestsTable = new DataTable('#requests-table', {
+                columns: [
+                    { key: 'first_name', label: 'Employee', sortable: true, primary: true },
+                    { key: 'leave_type_name', label: 'Leave Type', sortable: true },
+                    { key: 'start_date', label: 'Start Date', sortable: true },
+                    { key: 'end_date', label: 'End Date', sortable: true },
+                    { key: 'total_days', label: 'Days', sortable: true },
+                    { key: 'status', label: 'Status', sortable: true },
+                    { key: 'actions', label: '' }
+                ],
+                renderCell: {
+                    first_name: (val, row) => `${val} ${row.last_name}`,
+                    status: (val) => statusBadge(val),
+                    actions: (val, row) => `
+                        <div style="display:flex; gap:8px;">
+                            ${row.status === 'pending' ? `
+                                <button class="btn btn-sm btn-outline" style="color:var(--success);" onclick="approveLeave(${row.id})"><i class="ri-check-line"></i></button>
+                                <button class="btn btn-sm btn-outline" style="color:var(--error);" onclick="rejectLeave(${row.id})"><i class="ri-close-line"></i></button>
+                            ` : ''}
+                        </div>
+                    `
+                }
+            });
+
+            balancesTable = new DataTable('#balances-table', {
+                columns: [
+                    { key: 'first_name', label: 'Employee', sortable: true, primary: true },
+                    { key: 'leave_type_name', label: 'Leave Type', sortable: true },
+                    { key: 'allocated_days', label: 'Allocated', sortable: true },
+                    { key: 'used_days', label: 'Used', sortable: true },
+                    { key: 'remaining', label: 'Remaining', sortable: true }
+                ],
+                renderCell: {
+                    first_name: (val, row) => `${val} ${row.last_name}`,
+                    remaining: (val, row) => {
+                        const rem = row.allocated_days - row.used_days;
+                        const cls = rem <= 3 ? 'badge-red' : rem <= 7 ? 'badge-orange' : 'badge-green';
+                        return `<span class="badge ${cls}">${rem} days</span>`;
+                    }
+                }
+            });
+
+            typesTable = new DataTable('#types-table', {
+                columns: [
+                    { key: 'name', label: 'Leave Type', sortable: true, primary: true },
+                    { key: 'code', label: 'Code', sortable: true },
+                    { key: 'is_paid', label: 'Paid', sortable: true }
+                ],
+                renderCell: {
+                    is_paid: (val) => val ? '<span class="badge badge-green">Paid</span>' : '<span class="badge badge-gray">Unpaid</span>'
+                }
+            });
+
+            // Replace policies-table with Holidays-table for this Phase
+            document.getElementById('policies-table').id = 'holidays-table';
+            document.querySelector('.tab-panel[data-tab="types"] .card-header .card-title').innerHTML = '<i class="ri-calendar-event-line"></i> Office Public Holidays';
+
+            holidaysTable = new DataTable('#holidays-table', {
+                columns: [
+                    { key: 'holiday_date', label: 'Date', sortable: true, primary: true },
+                    { key: 'name', label: 'Holiday Name', sortable: true },
+                    { key: 'is_recurring', label: 'Recurring' },
+                    { key: 'actions', label: '' }
+                ],
+                renderCell: {
+                    is_recurring: (val) => val ? '<span class="badge badge-blue">Yearly</span>' : '<span class="badge badge-gray">One-off</span>',
+                    actions: (val, row) => `<button class="btn btn-sm btn-outline" style="color:var(--error);" onclick="deleteHoliday(${row.id})"><i class="ri-delete-bin-line"></i></button>`
+                }
+            });
+        }
+
+        async function loadAllData() {
+            loadLeaveRequests();
+            loadEmployees();
+            loadLeaveTypes();
+            loadHolidays();
+        }
+
+        async function loadLeaveRequests() {
+            const status = document.getElementById('filter-req-status')?.value || '';
+            const res = await API.get(`/api/leave?status=${status}`);
+            if (!res.error) {
+                const data = res.data || [];
+                requestsTable.setData(data);
+
+                // Update Stats
+                document.getElementById('stat-pending').innerText = data.filter(r => r.status === 'pending').length;
+
+                const currentMonth = new Date().getMonth();
+                const currentYear = new Date().getFullYear();
+                const today = new Date().toISOString().split('T')[0];
+
+                let approvedMonth = 0;
+                let onLeaveNow = 0;
+
+                data.forEach(r => {
+                    if (r.status === 'approved') {
+                        const start = new Date(r.start_date);
+                        if (start.getMonth() === currentMonth && start.getFullYear() === currentYear) {
+                            approvedMonth++;
+                        }
+                        if (today >= r.start_date && today <= r.end_date) {
+                            onLeaveNow++;
+                        }
+                    }
+                });
+
+                document.getElementById('stat-approved').innerText = approvedMonth;
+                document.getElementById('stat-on-leave').innerText = onLeaveNow;
+            }
+        }
+
+        async function loadEmployees() {
+            const res = await API.get('/api/employees');
+            if (!res.error) {
+                const selects = document.querySelectorAll('select[name="employee_id"]');
+                const options = '<option value="">Select employee...</option>' +
+                    res.data.map(e => `<option value="${e.id}">${e.first_name} ${e.last_name} (${e.employee_code})</option>`).join('');
+                selects.forEach(s => s.innerHTML = options);
+            }
+        }
+
+        async function loadLeaveTypes() {
+            const res = await API.get('/api/leave/types');
+            if (!res.error) {
+                typesTable.setData(res.data || []);
+                const selects = document.querySelectorAll('select[name="leave_type_id"]');
+                const options = '<option value="">Select type...</option>' +
+                    res.data.map(t => `<option value="${t.id}">${t.name}</option>`).join('');
+                selects.forEach(s => s.innerHTML = options);
+            }
+        }
+
+        async function loadHolidays() {
+            // Default to office 1 for demo
+            const res = await API.get('/api/holidays?office_id=1');
+            if (!res.error) holidaysTable.setData(res.data || []);
+        }
+
+        // Auto-calculate leave days (PREVIEW)
+        document.getElementById('leave-start')?.addEventListener('change', calcPreview);
+        document.getElementById('leave-end')?.addEventListener('change', calcPreview);
+        document.querySelector('select[name="leave_type_id"]')?.addEventListener('change', calcPreview);
+        document.querySelector('select[name="employee_id"]')?.addEventListener('change', calcPreview);
+
+        async function calcPreview() {
+            const eid = document.querySelector('#new-leave-modal select[name="employee_id"]').value;
+            const ltid = document.querySelector('#new-leave-modal select[name="leave_type_id"]').value;
+            const start = document.getElementById('leave-start').value;
+            const end = document.getElementById('leave-end').value;
+
+            if (eid && ltid && start && end) {
+                const res = await API.get(`/api/leave/preview?employee_id=${eid}&leave_type_id=${ltid}&start_date=${start}&end_date=${end}`);
+                if (!res.error) {
+                    document.getElementById('leave-total').value = res.data.total_days;
+                }
+            }
+        }
+
+        async function submitLeave(e) {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            const res = await API.post('/api/leave', Object.fromEntries(formData));
+            if (!res.error) {
+                alert('Leave request submitted!');
+                ModalManager.close('new-leave-modal');
+                loadLeaveRequests();
+            } else {
+                alert('Error: ' + res.message);
+            }
+        }
+
+        async function approveLeave(id) {
+            if (confirm('Approve this leave request?')) {
+                const res = await API.post('/api/leave/approve', { id });
+                if (!res.error) {
+                    alert('Approved and synced with attendance.');
+                    loadLeaveRequests();
+                }
+            }
+        }
+
+        async function rejectLeave(id) {
+            const comment = prompt('Enter rejection reason:');
+            if (comment !== null) {
+                const res = await API.post('/api/leave/reject', { id, comment });
+                if (!res.error) {
+                    alert('Leave rejected.');
+                    loadLeaveRequests();
+                }
+            }
+        }
+
+        async function deleteHoliday(id) {
+            if (confirm('Delete this holiday?')) {
+                const res = await API.delete(`/api/holidays/${id}`);
+                if (!res.error) loadHolidays();
+            }
+        }
+
+        async function addHoliday(e) {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            const res = await API.post('/api/holidays', Object.fromEntries(formData));
+            if (!res.error) {
+                alert('Holiday added!');
+                ModalManager.close('add-holiday-modal');
+                loadHolidays();
+            } else {
+                alert('Error: ' + res.message);
+            }
+        }
+    </script>
+</body>
+
+</html>

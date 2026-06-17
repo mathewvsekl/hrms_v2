@@ -1,0 +1,14 @@
+{
+    "modules":  [
+                    "organization",
+                    "employee",
+                    "rbac",
+                    "attendance",
+                    "leave_management",
+                    "appraisal"
+                ],
+    "database_schema":  "database_schema_v1.6.7.sql",
+    "version":  "v1.6.7",
+    "release_date":  "2026-03-25",
+    "notes":  "v1.6.6: PORTAL \u0026 LEAVE ENHANCEMENTS. Implemented leave applications, portal refinements, fixed appraisals and directory search."
+}

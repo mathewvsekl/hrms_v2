@@ -1,0 +1,19 @@
+# HRMS V2.0.0 Manual Configuration Checklist
+
+1. DATABASE SETUP (MySQL/MariaDB)
+   - Create a new database: e.g., `hrms_production_v2`
+   - Create a database user with ALL PRIVILEGES.
+   - Collation: `utf8mb4_unicode_ci`.
+
+2. ENVIRONMENT VARIABLES
+   - Copy `.env.example` to `.env` in the root.
+   - Update DB_HOST, DB_NAME, DB_USER, and DB_PASS.
+   - Set APP_URL to your domain.
+
+3. FILE PERMISSIONS (CHMOD)
+   - `/storage/logs`: 775 or 777.
+   - `/storage/cache`: 775 or 777.
+   - `/storage/uploads`: 775 or 777.
+
+4. PHP EXTENSIONS REQUIRED
+   - PDO_MYSQL, JSON, MBSTRING, OPENSSL, GD, ZIP.

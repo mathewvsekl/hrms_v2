@@ -1,0 +1,123 @@
+Array
+(
+    [0] => Array
+        (
+            [Field] => id
+            [Type] => int
+            [Null] => NO
+            [Key] => PRI
+            [Default] => 
+            [Extra] => auto_increment
+        )
+
+    [1] => Array
+        (
+            [Field] => country_id
+            [Type] => int
+            [Null] => NO
+            [Key] => MUL
+            [Default] => 
+            [Extra] => 
+        )
+
+    [2] => Array
+        (
+            [Field] => name
+            [Type] => varchar(100)
+            [Null] => NO
+            [Key] => 
+            [Default] => 
+            [Extra] => 
+        )
+
+    [3] => Array
+        (
+            [Field] => address
+            [Type] => text
+            [Null] => YES
+            [Key] => 
+            [Default] => 
+            [Extra] => 
+        )
+
+    [4] => Array
+        (
+            [Field] => contact_phone
+            [Type] => varchar(30)
+            [Null] => YES
+            [Key] => 
+            [Default] => 
+            [Extra] => 
+        )
+
+    [5] => Array
+        (
+            [Field] => contact_email
+            [Type] => varchar(100)
+            [Null] => YES
+            [Key] => 
+            [Default] => 
+            [Extra] => 
+        )
+
+    [6] => Array
+        (
+            [Field] => logo_url
+            [Type] => varchar(255)
+            [Null] => YES
+            [Key] => 
+            [Default] => default_logo.png
+            [Extra] => 
+        )
+
+    [7] => Array
+        (
+            [Field] => timezone
+            [Type] => varchar(50)
+            [Null] => NO
+            [Key] => 
+            [Default] => 
+            [Extra] => 
+        )
+
+    [8] => Array
+        (
+            [Field] => attendance_mode
+            [Type] => varchar(50)
+            [Null] => YES
+            [Key] => 
+            [Default] => time_based
+            [Extra] => 
+        )
+
+    [9] => Array
+        (
+            [Field] => is_time_tracking_enabled
+            [Type] => tinyint(1)
+            [Null] => YES
+            [Key] => 
+            [Default] => 0
+            [Extra] => 
+        )
+
+    [10] => Array
+        (
+            [Field] => created_at_utc
+            [Type] => timestamp
+            [Null] => YES
+            [Key] => 
+            [Default] => CURRENT_TIMESTAMP
+            [Extra] => DEFAULT_GENERATED
+        )
+
+    [11] => Array
+        (
+            [Field] => updated_at_utc
+            [Type] => timestamp
+            [Null] => YES
+            [Key] => 
+            [Default] => CURRENT_TIMESTAMP
+            [Extra] => DEFAULT_GENERATED on update CURRENT_TIMESTAMP
+        )
+
+)

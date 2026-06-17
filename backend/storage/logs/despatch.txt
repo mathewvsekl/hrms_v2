@@ -1,0 +1,85 @@
+DEPLOY HRMS PRODUCTION RELEASE
+
+Release Details:
+
+* Version: v1.8.2
+* Release ID: 20260326_230000
+* Environment: Production
+* Deployment Strategy: Atomic Release (v2.0)
+* Deployment Agent: david_deployment_executor v2.0
+
+Artifacts:
+
+* Code Package: /deploy/public_html.zip
+* Version File: /release/version.json
+* Release Log: /release/release_log.md
+* Database Migration: /release/database_migrations.sql (if present)
+
+---
+
+MISSION:
+Execute a ZERO-DOWNTIME, ATOMIC deployment using release-based architecture.
+Do NOT deploy directly into public_html.
+Ensure full validation, traceability, and rollback safety.
+
+---
+
+PHASE 1: PRE-DEPLOY VALIDATION (MANDATORY)
+
+* Verify all required artifacts exist
+* Validate zip integrity
+* Ensure no forbidden paths (config/, .env)
+* Validate version.json = v1.8.0
+* Parse release_log.md and confirm:
+
+  * requires_migration = true
+  * rollback_safe = true
+
+IF ANY CHECK FAILS → ABORT DEPLOYMENT
+
+---
+
+PHASE 2: PREPARE RELEASE
+
+* Generate RELEASE_ID if not provided
+* Create isolated release directory:
+  /domains/avantgarde.glowlady.com/releases/{RELEASE_ID}
+
+---
+
+
+PHASE 9: FAILURE HANDLING
+IF ANY FAILURE AFTER SWITCH:
+
+* Rollback to previous release immediately
+* Log error
+* Notify human
+
+---
+
+OUTPUT REQUIRED:
+
+* deployment.log
+* error.log (if any)
+* final status (success / rolled back)
+* active release ID
+* deployed version confirmation
+
+---
+
+STRICT RULES:
+
+* NEVER deploy into public_html directly
+* NEVER overwrite config
+* NEVER run destructive SQL
+* ALWAYS use atomic release switching
+* ALWAYS log every step
+
+---
+
+REPORT BACK TO ORION:
+
+* Deployment status
+* Release ID active
+* Migration status
+* Any warnings or risks

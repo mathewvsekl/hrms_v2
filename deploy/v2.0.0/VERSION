@@ -1,0 +1,5 @@
+HRMS_VERSION: v2.0.0-release
+BUILD_DATE: 2026-03-29
+ENVIRONMENT: production
+CORE_MODULES: organization, employee, rbac, attendance, leave_management, appraisal, assets, holidays, notifications.
+ARCHITECTURE: Decoupled API (V2.0.0 Refactored)

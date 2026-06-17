@@ -1,0 +1,756 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Employee Profile | HRMS V2</title>
+    <link rel="icon" type="image/svg+xml" href="avant-garde-logo.svg">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+    <link rel="stylesheet" href="shared-styles.css">
+    <style>
+        body {
+            background-color: #f3f2ef;
+            /* LinkedIn style background */
+            color: var(--text-main);
+        }
+
+        .profile-container {
+            max-width: 1128px;
+            margin: 0 auto;
+            padding: 24px;
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 24px;
+            align-items: start;
+        }
+
+        /* Top Hero Card */
+        .profile-header-card {
+            background: #fff;
+            border-radius: 8px;
+            overflow: hidden;
+            border: 1px solid var(--border);
+            margin-bottom: 24px;
+            position: relative;
+        }
+
+        .cover-photo {
+            height: 180px;
+            background: linear-gradient(135deg, var(--primary) 0%, #083b23 100%);
+            position: relative;
+        }
+
+        .cover-photo::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MCIgaGVpZ2h0PSI0MCI+PGNpcmNsZSBjeD0iMjAiIGN5PSIyMCIgcj0iMiIgZmlsbD0icmdiYSgyNTUsIDI1NSwgMjU1LCAwLjEpIi8+PC9zdmc+') repeat;
+        }
+
+        .profile-avatar {
+            width: 152px;
+            height: 152px;
+            border-radius: 50%;
+            border: 4px solid #fff;
+            background: linear-gradient(135deg, #2563eb, #8b5cf6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 48px;
+            font-weight: 700;
+            color: #fff;
+            position: absolute;
+            bottom: -76px;
+            left: 24px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            z-index: 2;
+        }
+
+        .profile-info {
+            padding: 86px 24px 24px 24px;
+            position: relative;
+        }
+
+        .profile-actions {
+            position: absolute;
+            top: 24px;
+            right: 24px;
+            display: flex;
+            gap: 12px;
+        }
+
+        .profile-name {
+            font-size: 24px;
+            font-weight: 600;
+            color: rgba(0, 0, 0, 0.9);
+            margin-bottom: 4px;
+        }
+
+        .profile-title {
+            font-size: 16px;
+            color: rgba(0, 0, 0, 0.9);
+            margin-bottom: 8px;
+        }
+
+        .profile-location {
+            font-size: 14px;
+            color: rgba(0, 0, 0, 0.6);
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* Common Card Style */
+        .section-card {
+            background: #fff;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            padding: 24px;
+            margin-bottom: 24px;
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .section-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: rgba(0, 0, 0, 0.9);
+        }
+
+        /* Detail Rows */
+        .detail-row {
+            display: flex;
+            margin-bottom: 16px;
+            align-items: flex-start;
+        }
+
+        .detail-label {
+            font-size: 14px;
+            color: rgba(0, 0, 0, 0.6);
+            min-width: 160px;
+            font-weight: 500;
+        }
+
+        .detail-value {
+            font-size: 14px;
+            color: rgba(0, 0, 0, 0.9);
+            flex: 1;
+        }
+
+        /* Experience/Employment Style */
+        .experience-item {
+            display: flex;
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .experience-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .exp-icon {
+            width: 48px;
+            height: 48px;
+            background: #f3f2ef;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            color: var(--primary);
+            flex-shrink: 0;
+        }
+
+        .exp-details h4 {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .exp-details p {
+            font-size: 14px;
+            color: rgba(0, 0, 0, 0.6);
+            margin-bottom: 4px;
+        }
+
+        /* Grid for sidebar stats */
+        .stat-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-top: 16px;
+        }
+
+        .stat-box {
+            background: #f8faff;
+            border: 1px solid #e2e8f0;
+            padding: 16px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 4px;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* Edit Mode Styles */
+        .edit-fields {
+            display: none;
+        }
+
+        .is-editing .edit-fields {
+            display: block;
+        }
+
+        .is-editing .read-only-fields {
+            display: none;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            font-size: 14px;
+            background: #fff;
+            color: var(--text-main);
+        }
+
+        /* Documents Table */
+        .doc-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .doc-table th {
+            text-align: left;
+            padding: 12px 8px;
+            border-bottom: 1px solid var(--border);
+            font-size: 14px;
+            color: rgba(0, 0, 0, 0.6);
+            font-weight: 500;
+        }
+
+        .doc-table td {
+            padding: 16px 8px;
+            border-bottom: 1px solid #f3f2ef;
+            font-size: 14px;
+        }
+
+        /* Calendar Mockup */
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 4px;
+            margin-top: 16px;
+        }
+
+        .cal-day-header {
+            text-align: center;
+            font-size: 12px;
+            font-weight: 600;
+            color: rgba(0, 0, 0, 0.6);
+            padding: 4px 0;
+        }
+
+        .cal-day {
+            aspect-ratio: 1;
+            background: #fff;
+            border: 1px solid #e1e5e8;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            position: relative;
+        }
+
+        .cal-day.present {
+            background: #e6f4ea;
+            border-color: #34a853;
+            color: #137333;
+            font-weight: 600;
+        }
+
+        .cal-day.absent {
+            background: #fce8e6;
+            border-color: #ea4335;
+            color: #c5221f;
+            font-weight: 600;
+        }
+
+        .cal-day.leave {
+            background: #fef7e0;
+            border-color: #fbbc04;
+            color: #b06000;
+            font-weight: 600;
+        }
+
+        .cal-day.empty {
+            border: none;
+            background: transparent;
+        }
+    </style>
+</head>
+
+<body class="is-view-mode">
+    <div class="profile-container">
+        <!-- Back Navigation -->
+        <div style="grid-column: span 2; margin-bottom: -12px;">
+            <button class="btn btn-outline" onclick="history.back()"
+                style="display: inline-flex; align-items: center; gap: 8px;">
+                <i class="ri-arrow-left-line"></i> Back to Directory
+            </button>
+        </div>
+
+        <div class="profile-main">
+            <!-- Left Main Column -->
+            <div class="main-column">
+
+                <!-- Hero Card -->
+                <div class="profile-header-card">
+                    <div class="cover-photo">
+                        <div class="profile-avatar" id="avatar-initials">JO</div>
+                    </div>
+                    <div class="profile-info">
+                        <div class="profile-actions">
+                            <button class="btn btn-outline edit-fields" style="display: none;" id="save-btn"
+                                onclick="saveProfile()">
+                                <i class="ri-save-line"></i> Save Profile
+                            </button>
+                            <button class="btn btn-primary" id="edit-btn" onclick="toggleEdit()">
+                                <i class="ri-pencil-line"></i> Edit
+                            </button>
+                        </div>
+
+                        <h1 class="profile-name">
+                            <span class="read-only-fields">Joseph Okello</span>
+                            <div class="edit-fields" style="display:flex;gap:8px;margin-bottom:8px;">
+                                <input type="text" class="form-control" value="Joseph" placeholder="First Name">
+                                <input type="text" class="form-control" value="Okello" placeholder="Last Name">
+                            </div>
+                        </h1>
+
+                        <div class="profile-title">
+                            <span class="read-only-fields">Senior Developer at Vision Scientific Uganda</span>
+                            <div class="edit-fields" style="margin-bottom:8px;">
+                                <input type="text" class="form-control" value="Senior Developer">
+                            </div>
+                        </div>
+
+                        <div class="profile-location">
+                            <i class="ri-map-pin-line"></i> Kampala HQ, Uganda &bull; <a href="#"
+                                style="color: var(--primary); text-decoration: none; margin-left:8px; font-weight:500;">Contact
+                                info</a>
+                        </div>
+
+                        <div style="display: flex; gap: 8px;">
+                            <span class="badge badge-green">Active</span>
+                            <span class="badge badge-blue">Full Time</span>
+                            <span class="badge badge-gray">EMP0001</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Experience / Employment Card -->
+                <div class="section-card">
+                    <div class="section-header">
+                        <h2 class="section-title">Experience</h2>
+                        <button class="btn btn-sm btn-outline edit-fields"><i class="ri-add-line"></i> Add Role</button>
+                    </div>
+
+                    <div class="experience-item">
+                        <div class="exp-icon"><i class="ri-building-line"></i></div>
+                        <div class="exp-details" style="flex:1;">
+                            <h4>Senior Developer</h4>
+                            <p>Vision Scientific Uganda &bull; Full-time</p>
+                            <p style="color: rgba(0,0,0,0.6); font-size: 13px;">Apr 2023 - Present &bull; Kampala HQ</p>
+                            <div class="edit-fields"
+                                style="margin-top: 12px; display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                                <input type="text" class="form-control" value="Senior Developer"
+                                    placeholder="Designation">
+                                <select class="form-control">
+                                    <option value="kampala" selected>Kampala HQ</option>
+                                    <option value="nairobi">Nairobi Office</option>
+                                </select>
+                                <select class="form-control">
+                                    <option value="engineering" selected>Engineering</option>
+                                    <option value="sales">Sales</option>
+                                </select>
+                                <select class="form-control">
+                                    <option value="full_time" selected>Full Time</option>
+                                    <option value="contractor">Contractor</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Documents & Contracts Card -->
+                <div class="section-card">
+                    <div class="section-header">
+                        <h2 class="section-title">Documents & Contracts</h2>
+                        <button class="btn btn-sm btn-outline edit-fields"><i class="ri-add-line"></i> Upload</button>
+                    </div>
+
+                    <div class="upload-zone edit-fields">
+                        <i class="ri-upload-cloud-2-line"></i>
+                        <h4 style="margin-bottom: 8px;">Drag & Drop files here</h4>
+                        <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 16px;">Support PDF, PNG, JPG
+                            up
+                            to 10MB</p>
+                        <button class="btn btn-outline" style="background:#fff;">Browse Files</button>
+                    </div>
+
+                    <table class="doc-table">
+                        <thead>
+                            <tr>
+                                <th>Document Name</th>
+                                <th>Type</th>
+                                <th>Date Added</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>
+                                    <div style="display:flex; align-items:center; gap:12px;">
+                                        <i class="ri-file-pdf-fill" style="font-size:24px; color:#e11d48;"></i>
+                                        <div>
+                                            <div style="font-weight:500;">Permanent Contract 2023</div>
+                                            <div style="font-size:12px; color:rgba(0,0,0,0.6);">PDF &bull; 2.4 MB</div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>Contract</td>
+                                <td>Apr 1, 2023</td>
+                                <td style="text-align:right;">
+                                    <button class="btn btn-sm btn-outline"><i class="ri-download-line"></i></button>
+                                    <button class="btn btn-sm btn-outline edit-fields" style="color: var(--danger);"><i
+                                            class="ri-delete-bin-line"></i></button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <div style="display:flex; align-items:center; gap:12px;">
+                                        <i class="ri-image-fill" style="font-size:24px; color:#2563eb;"></i>
+                                        <div>
+                                            <div style="font-weight:500;">National ID Front</div>
+                                            <div style="font-size:12px; color:rgba(0,0,0,0.6);">JPG &bull; 1.1 MB</div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>ID Proof</td>
+                                <td>Apr 1, 2023</td>
+                                <td style="text-align:right;">
+                                    <button class="btn btn-sm btn-outline"><i class="ri-download-line"></i></button>
+                                    <button class="btn btn-sm btn-outline edit-fields" style="color: var(--danger);"><i
+                                            class="ri-delete-bin-line"></i></button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Salary Structure -->
+                <div class="section-card">
+                    <div class="section-header">
+                        <h2 class="section-title">Compensation</h2>
+                        <button class="btn btn-sm btn-outline edit-fields"><i class="ri-add-line"></i> Update</button>
+                    </div>
+
+                    <div
+                        style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 16px; border-bottom: 1px solid var(--border);">
+                        <div>
+                            <div style="font-size: 14px; color: rgba(0,0,0,0.6); margin-bottom: 4px;">Current Base
+                                Salary
+                            </div>
+                            <div style="font-size: 24px; font-weight: 700; color: rgba(0,0,0,0.9);">UGX 4,500,000 <span
+                                    style="font-size: 14px; font-weight: 400; color: rgba(0,0,0,0.6);">/month</span>
+                            </div>
+                        </div>
+                        <span class="badge badge-green">Effective Jan 1, 2024</span>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Right Sidebar -->
+            <div class="sidebar-column">
+
+                <!-- Attendance Overview -->
+                <div class="section-card">
+                    <div class="section-header" style="margin-bottom: 12px;">
+                        <h2 class="section-title" style="font-size: 16px;">Attendance (Current Month)</h2>
+                    </div>
+                    <div class="stat-grid" style="margin-top:0; margin-bottom: 16px;">
+                        <div class="stat-box" style="padding: 12px;">
+                            <div class="stat-value" style="font-size: 20px;">18</div>
+                            <div class="stat-label">Present</div>
+                        </div>
+                        <div class="stat-box" style="padding: 12px; background: #fef2f2; border-color: #fee2e2;">
+                            <div class="stat-value" style="font-size: 20px; color: #dc2626;">1</div>
+                            <div class="stat-label" style="color: #ef4444;">Absent</div>
+                        </div>
+                    </div>
+
+                    <div class="calendar-grid">
+                        <div class="cal-day-header">M</div>
+                        <div class="cal-day-header">T</div>
+                        <div class="cal-day-header">W</div>
+                        <div class="cal-day-header">T</div>
+                        <div class="cal-day-header">F</div>
+                        <div class="cal-day-header">S</div>
+                        <div class="cal-day-header">S</div>
+
+                        <div class="cal-day empty"></div>
+                        <div class="cal-day empty"></div>
+                        <div class="cal-day present">1</div>
+                        <div class="cal-day present">2</div>
+                        <div class="cal-day present">3</div>
+                        <div class="cal-day">4</div>
+                        <div class="cal-day">5</div>
+                        <div class="cal-day present">6</div>
+                        <div class="cal-day present">7</div>
+                        <div class="cal-day absent">8</div>
+                        <div class="cal-day present">9</div>
+                        <div class="cal-day present">10</div>
+                        <div class="cal-day">11</div>
+                        <div class="cal-day">12</div>
+                        <div class="cal-day leave" title="Sick Leave">13</div>
+                        <div class="cal-day present">14</div>
+                        <div class="cal-day present">15</div>
+                        <div class="cal-day present">16</div>
+                        <div class="cal-day present">17</div>
+                        <div class="cal-day">18</div>
+                        <div class="cal-day">19</div>
+                    </div>
+
+                    <div
+                        style="display: flex; gap: 12px; margin-top: 16px; font-size: 12px; color: rgba(0,0,0,0.6); justify-content: center;">
+                        <div style="display:flex; align-items:center; gap:4px;"><span
+                                style="width:8px;height:8px;border-radius:50%;background:#34a853;"></span> Present</div>
+                        <div style="display:flex; align-items:center; gap:4px;"><span
+                                style="width:8px;height:8px;border-radius:50%;background:#ea4335;"></span> Absent</div>
+                        <div style="display:flex; align-items:center; gap:4px;"><span
+                                style="width:8px;height:8px;border-radius:50%;background:#fbbc04;"></span> Leave</div>
+                    </div>
+                </div>
+
+                <!-- Leave Balance -->
+                <div class="section-card">
+                    <div class="section-header" style="margin-bottom: 16px;">
+                        <h2 class="section-title" style="font-size: 16px;">Leave Balances</h2>
+                    </div>
+
+                    <div style="margin-bottom: 16px;">
+                        <div
+                            style="display: flex; justify-content: space-between; font-size: 14px; margin-bottom: 8px;">
+                            <span style="font-weight: 500;">Annual Leave</span>
+                            <span>14 / 21 days</span>
+                        </div>
+                        <div
+                            style="width: 100%; height: 6px; background: #e2e8f0; border-radius: 3px; overflow: hidden;">
+                            <div style="width: 66%; height: 100%; background: var(--primary); border-radius: 3px;">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <div
+                            style="display: flex; justify-content: space-between; font-size: 14px; margin-bottom: 8px;">
+                            <span style="font-weight: 500;">Sick Leave</span>
+                            <span>5 / 10 days</span>
+                        </div>
+                        <div
+                            style="width: 100%; height: 6px; background: #e2e8f0; border-radius: 3px; overflow: hidden;">
+                            <div style="width: 50%; height: 100%; background: #fbbc04; border-radius: 3px;"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Custom Fields (Compliance) -->
+                <div class="section-card">
+                    <div class="section-header" style="margin-bottom: 16px;">
+                        <h2 class="section-title" style="font-size: 16px;">Compliance Details</h2>
+                        <button class="btn btn-sm btn-outline edit-fields"><i class="ri-pencil-line"></i></button>
+                    </div>
+
+                    <div class="detail-row" style="flex-direction: column; gap: 4px;">
+                        <span class="detail-label">NSSF Number</span>
+                        <span class="detail-value read-only-fields"
+                            style="font-family: monospace; font-size: 15px;">NSSF-UG-00412</span>
+                        <div class="edit-fields"><input type="text" class="form-control" value="NSSF-UG-00412"></div>
+                    </div>
+                    <div class="detail-row" style="flex-direction: column; gap: 4px;">
+                        <span class="detail-label">TIN</span>
+                        <span class="detail-value read-only-fields"
+                            style="font-family: monospace; font-size: 15px;">1004820193</span>
+                        <div class="edit-fields"><input type="text" class="form-control" value="1004820193"></div>
+                    </div>
+                    <div class="detail-row" style="flex-direction: column; gap: 4px; margin-bottom: 0;">
+                        <span class="detail-label">Bank Account</span>
+                        <span class="detail-value read-only-fields"
+                            style="font-family: monospace; font-size: 15px;">0012345678 (Stanbic)</span>
+                        <div class="edit-fields"><input type="text" class="form-control" value="0012345678 (Stanbic)">
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <script>
+            const urlParams = new URLSearchParams(window.location.search);
+            const employeeId = urlParams.get('id') || '1'; // Default for demo if no ID
+
+            document.addEventListener('DOMContentLoaded', () => {
+                loadEmployeeProfile();
+                loadAttendanceSummary();
+                loadLeaveBalances();
+            });
+
+            async function loadEmployeeProfile() {
+                const res = await API.get(`/api/employees/${employeeId}`);
+                if (!res.error && res.data) {
+                    const e = res.data;
+
+                    // Header details
+                    document.getElementById('avatar-initials').innerText = (e.first_name[0] + e.last_name[0]).toUpperCase();
+                    document.querySelectorAll('.profile-name .read-only-fields')[0].innerText = `${e.first_name} ${e.last_name}`;
+                    document.querySelectorAll('.profile-title .read-only-fields')[0].innerText = `${e.designation} at ${e.legal_entity_name || 'Vision Scientific'}`;
+
+                    const locationEl = document.querySelector('.profile-location');
+                    locationEl.innerHTML = `<i class="ri-map-pin-line"></i> ${e.office_name}, ${e.country || 'Uganda'} &bull; <a href="#" style="color: var(--primary); text-decoration: none; margin-left:8px; font-weight:500;">Contact info</a>`;
+
+                    // Badges
+                    const badgeContainer = document.querySelector('.profile-info div[style*="display: flex"]');
+                    badgeContainer.innerHTML = `
+                    <span class="badge ${e.status === 'active' ? 'badge-green' : 'badge-gray'}">${e.status}</span>
+                    <span class="badge badge-blue">${e.employment_type || 'Full Time'}</span>
+                    <span class="badge badge-gray">${e.employee_code}</span>
+                `;
+
+                    // Compliance
+                    const complianceRows = document.querySelectorAll('.sidebar-column .section-card:last-child .detail-row');
+                    const customData = typeof e.custom_data === 'string' ? JSON.parse(e.custom_data) : e.custom_data;
+
+                    if (complianceRows[0]) complianceRows[0].querySelector('.detail-value').innerText = customData?.nssf_number || 'N/A';
+                    if (complianceRows[1]) complianceRows[1].querySelector('.detail-value').innerText = customData?.tin || 'N/A';
+                    if (complianceRows[2]) complianceRows[2].querySelector('.detail-value').innerText = customData?.bank_account || 'N/A';
+                }
+            }
+
+            async function loadAttendanceSummary() {
+                const now = new Date();
+                const res = await API.get(`/api/attendance/summary?employee_id=${employeeId}&month=${now.getMonth() + 1}&year=${now.getFullYear()}`);
+                if (!res.error && res.data) {
+                    const { stats, logs } = res.data;
+
+                    // Update stat boxes
+                    const presentCount = stats.find(s => s.status === 'present')?.count || 0;
+                    const absentCount = stats.find(s => s.status === 'absent')?.count || 0;
+
+                    document.querySelectorAll('.stat-box .stat-value')[0].innerText = presentCount;
+                    document.querySelectorAll('.stat-box .stat-value')[1].innerText = absentCount;
+
+                    // Update calendar grid (simplified mapping)
+                    const gridDays = document.querySelectorAll('.calendar-grid .cal-day:not(.empty)');
+                    logs.forEach(log => {
+                        const dayNum = new Date(log.attendance_date).getDate();
+                        const dayEl = Array.from(gridDays).find(el => el.innerText == dayNum);
+                        if (dayEl) {
+                            dayEl.className = `cal-day ${log.status}`;
+                        }
+                    });
+                }
+            }
+
+            async function loadLeaveBalances() {
+                const res = await API.get(`/api/leave/balances?employee_id=${employeeId}`);
+                if (!res.error && res.data) {
+                    const balances = res.data;
+                    const container = document.querySelector('.sidebar-column .section-card:nth-child(2)');
+                    let html = '<div class="section-header" style="margin-bottom: 16px;"><h2 class="section-title" style="font-size: 16px;">Leave Balances</h2></div>';
+
+                    balances.forEach(b => {
+                        const used = parseFloat(b.used_days);
+                        const total = parseFloat(b.allocated_days);
+                        const percent = (used / total) * 100;
+                        const color = b.leave_type_name.includes('Sick') ? '#fbbc04' : 'var(--primary)';
+
+                        html += `
+                        <div style="margin-bottom: 16px;">
+                            <div style="display: flex; justify-content: space-between; font-size: 14px; margin-bottom: 8px;">
+                                <span style="font-weight: 500;">${b.leave_type_name}</span>
+                                <span>${total - used} / ${total} days left</span>
+                            </div>
+                            <div style="width: 100%; height: 6px; background: #e2e8f0; border-radius: 3px; overflow: hidden;">
+                                <div style="width: ${100 - percent}%; height: 100%; background: ${color}; border-radius: 3px;"></div>
+                            </div>
+                        </div>
+                    `;
+                    });
+                    container.innerHTML = html;
+                }
+            }
+
+            function toggleEdit() {
+                document.body.classList.toggle('is-editing');
+                const btn = document.getElementById('edit-btn');
+                const saveBtn = document.getElementById('save-btn');
+
+                if (document.body.classList.contains('is-editing')) {
+                    btn.style.display = 'none';
+                    saveBtn.style.display = 'inline-flex';
+                } else {
+                    btn.style.display = 'inline-flex';
+                    saveBtn.style.display = 'none';
+                }
+            }
+
+            async function saveProfile() {
+                // Logic to collect values and call PUT /api/employees/${employeeId}
+                const firstName = document.querySelector('input[placeholder="First Name"]').value;
+                const lastName = document.querySelector('input[placeholder="Last Name"]').value;
+
+                const payload = {
+                    first_name: firstName,
+                    last_name: lastName,
+                    // Add more fields as needed for a full edit implementation
+                };
+
+                const res = await API.put(`/api/employees/${employeeId}`, payload);
+                if (!res.error) {
+                    alert('Profile updated successfully!');
+                    loadEmployeeProfile();
+                    toggleEdit();
+                } else {
+                    alert('Error updating profile: ' + res.message);
+                }
+            }
+        </script>
+</body>
+
+</html>

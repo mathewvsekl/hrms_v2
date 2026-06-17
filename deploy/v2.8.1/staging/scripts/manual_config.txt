@@ -1,0 +1,4 @@
+DATABASE CONFIGURATION:
+Host: localhost
+Port: 3306
+User: Admin_anedins_hrms_agi

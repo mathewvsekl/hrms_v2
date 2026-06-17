@@ -1,0 +1,148 @@
+{
+  "countries": [
+    {
+      "name": "United Arab Emirates",
+      "iso_code": "ARE",
+      "currency_code": "AED",
+      "default_timezone": "Asia/Dubai",
+      "custom_fields": [
+        {
+          "field_key": "emirates_id",
+          "field_name": "Emirates ID",
+          "field_type": "text",
+          "is_required": true
+        },
+        {
+          "field_key": "visa_expiry",
+          "field_name": "Visa Expiry Date",
+          "field_type": "date",
+          "is_required": true
+        },
+        {
+          "field_key": "wps_code",
+          "field_name": "WPS Routing Code",
+          "field_type": "text",
+          "is_required": true
+        }
+      ]
+    },
+    {
+      "name": "Kenya",
+      "iso_code": "KEN",
+      "currency_code": "KES",
+      "default_timezone": "Africa/Nairobi",
+      "custom_fields": [
+        {
+          "field_key": "kra_pin",
+          "field_name": "KRA PIN",
+          "field_type": "text",
+          "is_required": true
+        },
+        {
+          "field_key": "nssf_no",
+          "field_name": "NSSF Number",
+          "field_type": "text",
+          "is_required": true
+        },
+        {
+          "field_key": "sha_no",
+          "field_name": "SHA Number",
+          "field_type": "text",
+          "is_required": true
+        }
+      ]
+    },
+    {
+      "name": "Uganda",
+      "iso_code": "UGA",
+      "currency_code": "UGX",
+      "default_timezone": "Africa/Kampala",
+      "custom_fields": [
+        {
+          "field_key": "tin_no",
+          "field_name": "TIN",
+          "field_type": "text",
+          "is_required": true
+        },
+        {
+          "field_key": "nssf_no",
+          "field_name": "NSSF Number",
+          "field_type": "text",
+          "is_required": true
+        }
+      ]
+    },
+    {
+      "name": "Tanzania",
+      "iso_code": "TZA",
+      "currency_code": "TZS",
+      "default_timezone": "Africa/Dar_es_Salaam",
+      "custom_fields": [
+        {
+          "field_key": "tin_no",
+          "field_name": "TIN",
+          "field_type": "text",
+          "is_required": true
+        },
+        {
+          "field_key": "nssf_no",
+          "field_name": "NSSF Number",
+          "field_type": "text",
+          "is_required": true
+        }
+      ]
+    },
+    {
+      "name": "Ethiopia",
+      "iso_code": "ETH",
+      "currency_code": "ETB",
+      "default_timezone": "Africa/Addis_Ababa",
+      "custom_fields": [
+        {
+          "field_key": "tin_no",
+          "field_name": "TIN",
+          "field_type": "text",
+          "is_required": true
+        },
+        {
+          "field_key": "pension_no",
+          "field_name": "Pension Number",
+          "field_type": "text",
+          "is_required": true
+        }
+      ]
+    },
+    {
+      "name": "India",
+      "iso_code": "IND",
+      "currency_code": "INR",
+      "default_timezone": "Asia/Kolkata",
+      "custom_fields": [
+        {
+          "field_key": "pan_no",
+          "field_name": "PAN Card",
+          "field_type": "text",
+          "is_required": true
+        },
+        {
+          "field_key": "aadhaar_no",
+          "field_name": "Aadhaar",
+          "field_type": "text",
+          "is_required": true
+        },
+        {
+          "field_key": "uan_no",
+          "field_name": "UAN/PF Number",
+          "field_type": "text",
+          "is_required": true
+        },
+        {
+          "field_key": "ifsc_code",
+          "field_name": "Bank IFSC Code",
+          "field_type": "text",
+          "is_required": true
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reports | HRMS V2</title>
+    <link rel="icon" type="image/svg+xml" href="avant-garde-logo.svg">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+    <link rel="stylesheet" href="shared-styles.css">
+    <style>
+        .report-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .report-card {
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: 24px;
+            background: var(--surface);
+            cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .report-card:hover {
+            box-shadow: var(--shadow-lg);
+            transform: translateY(-2px);
+        }
+
+        .report-card .rc-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: var(--radius-lg);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            margin-bottom: 16px;
+        }
+
+        .report-card h3 {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .report-card p {
+            font-size: 13px;
+            color: var(--text-muted);
+        }
+
+        .report-card .rc-arrow {
+            position: absolute;
+            right: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 20px;
+            color: var(--border);
+            transition: color 0.2s;
+        }
+
+        .report-card:hover .rc-arrow {
+            color: var(--primary);
+        }
+
+        /* CSS Bars */
+        .bar-chart {
+            display: flex;
+            align-items: flex-end;
+            gap: 8px;
+            height: 120px;
+            padding: 0 8px;
+        }
+
+        .bar-group {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .bar {
+            width: 100%;
+            min-width: 24px;
+            border-radius: 4px 4px 0 0;
+            transition: height 0.4s ease;
+        }
+
+        .bar-label {
+            font-size: 10px;
+            color: var(--text-muted);
+            white-space: nowrap;
+        }
+
+        .report-detail {
+            display: none;
+        }
+
+        .report-detail.active {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="page-container">
+        <div class="page-header">
+            <h1>Reports</h1>
+            <p>Enterprise analytics and data exports</p>
+        </div>
+
+        <!-- Report Cards -->
+        <div class="report-grid" id="report-cards">
+            <div class="report-card" onclick="showReport('headcount')">
+                <div class="rc-icon" style="background:var(--primary-light);color:var(--primary);"><i
+                        class="ri-team-line"></i></div>
+                <h3>Headcount Report</h3>
+                <p>Employee distribution across offices, departments, and employment types</p>
+                <i class="ri-arrow-right-s-line rc-arrow"></i>
+            </div>
+            <div class="report-card" onclick="showReport('attendance')">
+                <div class="rc-icon" style="background:var(--success-light);color:var(--success);"><i
+                        class="ri-calendar-check-line"></i></div>
+                <h3>Attendance Report</h3>
+                <p>Daily and monthly attendance rates, late arrivals, and absence patterns</p>
+                <i class="ri-arrow-right-s-line rc-arrow"></i>
+            </div>
+            <div class="report-card" onclick="showReport('leave')">
+                <div class="rc-icon" style="background:var(--purple-light);color:var(--purple);"><i
+                        class="ri-umbrella-line"></i></div>
+                <h3>Leave Report</h3>
+                <p>Leave utilization, balance summaries, and carry-forward analysis</p>
+                <i class="ri-arrow-right-s-line rc-arrow"></i>
+            </div>
+            <div class="report-card" onclick="showReport('payroll')">
+                <div class="rc-icon" style="background:var(--warning-light);color:var(--warning);"><i
+                        class="ri-wallet-3-line"></i></div>
+                <h3>Payroll Summary</h3>
+                <p>Monthly payroll costs by office, currency breakdowns, and trends</p>
+                <i class="ri-arrow-right-s-line rc-arrow"></i>
+            </div>
+        </div>
+
+        <!-- Headcount Report Detail -->
+        <div class="report-detail" id="report-headcount">
+            <div class="toolbar">
+                <div class="toolbar-group">
+                    <button class="btn btn-ghost" onclick="hideReport()"><i class="ri-arrow-left-line"></i>
+                        Back</button>
+                    <h2 style="font-size:18px;font-weight:600;">Headcount Report</h2>
+                </div>
+                <div class="toolbar-group">
+                    <select class="form-control form-control-sm" style="width:200px;">
+                        <option value="">All Offices</option>
+                        <option>Kampala HQ</option>
+                        <option>Dubai Office</option>
+                        <option>Nairobi Office</option>
+                        <option>Mumbai Office</option>
+                    </select>
+                    <button class="btn btn-outline btn-sm" onclick="exportReport('headcount')"><i
+                            class="ri-download-2-line"></i> Export CSV</button>
+                    <button class="btn btn-outline btn-sm"><i class="ri-file-pdf-line"></i> PDF</button>
+                </div>
+            </div>
+
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;">
+                <div class="card">
+                    <div class="card-header"><span class="card-title">By Office</span></div>
+                    <div class="bar-chart">
+                        <div class="bar-group">
+                            <div class="bar" style="height:80%;background:var(--primary);"></div>
+                            <div class="bar-label">Kampala</div>
+                            <div class="bar-label" style="font-weight:600;">10</div>
+                        </div>
+                        <div class="bar-group">
+                            <div class="bar" style="height:56%;background:var(--success);"></div>
+                            <div class="bar-label">Dubai</div>
+                            <div class="bar-label" style="font-weight:600;">7</div>
+                        </div>
+                        <div class="bar-group">
+                            <div class="bar" style="height:24%;background:var(--purple);"></div>
+                            <div class="bar-label">Mumbai</div>
+                            <div class="bar-label" style="font-weight:600;">3</div>
+                        </div>
+                        <div class="bar-group">
+                            <div class="bar" style="height:16%;background:var(--warning);"></div>
+                            <div class="bar-label">Nairobi</div>
+                            <div class="bar-label" style="font-weight:600;">2</div>
+                        </div>
+                        <div class="bar-group">
+                            <div class="bar" style="height:8%;background:var(--info);"></div>
+                            <div class="bar-label">Dar</div>
+                            <div class="bar-label" style="font-weight:600;">1</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-header"><span class="card-title">By Employment Type</span></div>
+                    <div class="bar-chart">
+                        <div class="bar-group">
+                            <div class="bar" style="height:85%;background:var(--success);"></div>
+                            <div class="bar-label">Full Time</div>
+                            <div class="bar-label" style="font-weight:600;">19</div>
+                        </div>
+                        <div class="bar-group">
+                            <div class="bar" style="height:15%;background:var(--primary);"></div>
+                            <div class="bar-label">Part Time</div>
+                            <div class="bar-label" style="font-weight:600;">2</div>
+                        </div>
+                        <div class="bar-group">
+                            <div class="bar" style="height:10%;background:var(--purple);"></div>
+                            <div class="bar-label">Contractor</div>
+                            <div class="bar-label" style="font-weight:600;">2</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card" style="padding:0;overflow:hidden;">
+                <div id="headcount-table"></div>
+            </div>
+        </div>
+
+        <!-- Attendance Report Detail -->
+        <div class="report-detail" id="report-attendance">
+            <div class="toolbar">
+                <div class="toolbar-group">
+                    <button class="btn btn-ghost" onclick="hideReport()"><i class="ri-arrow-left-line"></i>
+                        Back</button>
+                    <h2 style="font-size:18px;font-weight:600;">Attendance Report</h2>
+                </div>
+                <div class="toolbar-group">
+                    <input type="month" class="form-control form-control-sm" value="2026-03" style="width:170px;">
+                    <button class="btn btn-outline btn-sm" onclick="exportReport('attendance')"><i
+                            class="ri-download-2-line"></i> Export</button>
+                </div>
+            </div>
+            <div class="card" style="padding:0;overflow:hidden;">
+                <div id="attendance-report-table"></div>
+            </div>
+        </div>
+
+        <!-- Leave Report Detail -->
+        <div class="report-detail" id="report-leave">
+            <div class="toolbar">
+                <div class="toolbar-group">
+                    <button class="btn btn-ghost" onclick="hideReport()"><i class="ri-arrow-left-line"></i>
+                        Back</button>
+                    <h2 style="font-size:18px;font-weight:600;">Leave Report</h2>
+                </div>
+                <div class="toolbar-group">
+                    <select class="form-control form-control-sm" style="width:120px;">
+                        <option>2026</option>
+                        <option>2025</option>
+                    </select>
+                    <button class="btn btn-outline btn-sm" onclick="exportReport('leave')"><i
+                            class="ri-download-2-line"></i> Export</button>
+                </div>
+            </div>
+            <div class="card" style="padding:0;overflow:hidden;">
+                <div id="leave-report-table"></div>
+            </div>
+        </div>
+
+        <!-- Payroll Report Detail -->
+        <div class="report-detail" id="report-payroll">
+            <div class="toolbar">
+                <div class="toolbar-group">
+                    <button class="btn btn-ghost" onclick="hideReport()"><i class="ri-arrow-left-line"></i>
+                        Back</button>
+                    <h2 style="font-size:18px;font-weight:600;">Payroll Summary</h2>
+                </div>
+                <div class="toolbar-group">
+                    <select class="form-control form-control-sm" style="width:120px;">
+                        <option>2026</option>
+                        <option>2025</option>
+                    </select>
+                    <button class="btn btn-outline btn-sm" onclick="exportReport('payroll')"><i
+                            class="ri-download-2-line"></i> Export</button>
+                </div>
+            </div>
+            <div class="card" style="padding:0;overflow:hidden;">
+                <div id="payroll-report-table"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="table-component.js"></script>
+    <script>
+        function showReport(type) {
+            document.getElementById('report-cards').style.display = 'none';
+            document.querySelectorAll('.report-detail').forEach(d => d.classList.remove('active'));
+            document.getElementById('report-' + type).classList.add('active');
+        }
+
+        function hideReport() {
+            document.querySelectorAll('.report-detail').forEach(d => d.classList.remove('active'));
+            document.getElementById('report-cards').style.display = 'grid';
+        }
+
+        // Headcount
+        new DataTable('#headcount-table', {
+            columns: [
+                { key: 'office', label: 'Office', sortable: true, primary: true },
+                { key: 'country', label: 'Country', sortable: true },
+                { key: 'total', label: 'Total', sortable: true },
+                { key: 'active', label: 'Active', sortable: true },
+                { key: 'onboarding', label: 'Onboarding' },
+                { key: 'offboarding', label: 'Offboarding' }
+            ],
+            data: [
+                { office: 'Kampala HQ', country: 'Uganda', total: 10, active: 9, onboarding: 1, offboarding: 0 },
+                { office: 'Dubai Office', country: 'UAE', total: 7, active: 7, onboarding: 0, offboarding: 0 },
+                { office: 'Mumbai Office', country: 'India', total: 3, active: 2, onboarding: 0, offboarding: 1 },
+                { office: 'Nairobi Office', country: 'Kenya', total: 2, active: 2, onboarding: 0, offboarding: 0 },
+                { office: 'Dar es Salaam Office', country: 'Tanzania', total: 1, active: 1, onboarding: 0, offboarding: 0 },
+            ]
+        });
+
+        // Attendance Report
+        new DataTable('#attendance-report-table', {
+            columns: [
+                { key: 'employee', label: 'Employee', sortable: true, primary: true },
+                { key: 'office', label: 'Office', sortable: true },
+                { key: 'present', label: 'Present', sortable: true },
+                { key: 'absent', label: 'Absent', sortable: true },
+                { key: 'late', label: 'Late', sortable: true },
+                { key: 'leave', label: 'Leave', sortable: true },
+                { key: 'rate', label: 'Rate', sortable: true }
+            ],
+            data: [
+                { employee: 'Joseph Okello', office: 'Kampala HQ', present: 20, absent: 0, late: 1, leave: 0, rate: '95%' },
+                { employee: 'Atim Grace', office: 'Kampala HQ', present: 18, absent: 1, late: 0, leave: 2, rate: '86%' },
+                { employee: 'Raj Patel', office: 'Mumbai Office', present: 19, absent: 0, late: 2, leave: 0, rate: '90%' },
+                { employee: 'Sarah Wanjiku', office: 'Nairobi Office', present: 0, absent: 0, late: 0, leave: 21, rate: '—' },
+            ],
+            renderCell: {
+                rate: (val) => val === '—' ? '<span class="badge badge-purple">On Leave</span>' : `<span class="badge ${parseInt(val) >= 90 ? 'badge-green' : parseInt(val) >= 75 ? 'badge-orange' : 'badge-red'}">${val}</span>`
+            }
+        });
+
+        // Leave Report
+        new DataTable('#leave-report-table', {
+            columns: [
+                { key: 'employee', label: 'Employee', sortable: true, primary: true },
+                { key: 'annual_used', label: 'Annual Used', sortable: true },
+                { key: 'annual_rem', label: 'Annual Remaining', sortable: true },
+                { key: 'sick_used', label: 'Sick Used', sortable: true },
+                { key: 'total_used', label: 'Total Used', sortable: true }
+            ],
+            data: [
+                { employee: 'Joseph Okello', annual_used: 5, annual_rem: 16, sick_used: 0, total_used: 5 },
+                { employee: 'Atim Grace', annual_used: 8, annual_rem: 13, sick_used: 2, total_used: 10 },
+                { employee: 'Sarah Wanjiku', annual_used: 0, annual_rem: 21, sick_used: 0, total_used: 60 },
+            ]
+        });
+
+        // Payroll Report
+        new DataTable('#payroll-report-table', {
+            columns: [
+                { key: 'period', label: 'Period', sortable: true, primary: true },
+                { key: 'office', label: 'Office', sortable: true },
+                { key: 'currency', label: 'Currency' },
+                { key: 'total_gross', label: 'Gross Total', sortable: true },
+                { key: 'total_net', label: 'Net Total', sortable: true },
+                { key: 'employees', label: 'Employees' },
+                { key: 'status', label: 'Status', sortable: true }
+            ],
+            data: [
+                { period: 'Feb 2026', office: 'Kampala HQ', currency: 'UGX', total_gross: '45,000,000', total_net: '38,250,000', employees: 10, status: 'completed' },
+                { period: 'Feb 2026', office: 'Dubai Office', currency: 'AED', total_gross: '84,000', total_net: '75,600', employees: 7, status: 'paid' },
+                { period: 'Jan 2026', office: 'Kampala HQ', currency: 'UGX', total_gross: '44,800,000', total_net: '38,080,000', employees: 10, status: 'paid' },
+            ],
+            renderCell: { status: (val) => statusBadge(val) }
+        });
+
+        function exportReport(type) {
+            alert(`Exporting ${type} report as CSV...`);
+        }
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,63 @@
+<?php
+
+/**
+ * HRMS V2 Database Singleton
+ * Implements a secure PDO wrapper to interface with DATABASE_SCHEMA.sql (MySQL)
+ */
+class Database
+{
+    private static $instance = null;
+    private $pdo;
+
+    // Database credentials - these should ideally be mapped to a .env file later
+    private $host = '127.0.0.1';
+    private $db = 'hrms_v2';
+    private $user = 'root'; // Adjust to local development user
+    private $pass = ''; // Adjust to local development password
+    private $charset = 'utf8mb4';
+
+    private function __construct()
+    {
+        $dsn = "mysql:host={$this->host};dbname={$this->db};charset={$this->charset}";
+        $options = [
+            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+            PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+            PDO::ATTR_EMULATE_PREPARES => false, // Enforce true prepared statements at the db level
+        ];
+
+        try {
+            $this->pdo = new PDO($dsn, $this->user, $this->pass, $options);
+        } catch (\PDOException $e) {
+            // Provide a generic fault without exposing raw SQL connection strings
+            die("Database Exception: Connection to HRMS cluster failed.");
+        }
+    }
+
+    public static function getInstance()
+    {
+        if (self::$instance === null) {
+            self::$instance = new Database();
+        }
+        return self::$instance;
+    }
+
+    public function getConnection()
+    {
+        return $this->pdo;
+    }
+
+    /**
+     * Prevents cloning of the singleton instance
+     */
+    private function __clone()
+    {
+    }
+
+    /**
+     * Prevents unserialization of the singleton instance
+     */
+    public function __wakeup()
+    {
+        throw new Exception("Cannot unserialize singleton");
+    }
+}

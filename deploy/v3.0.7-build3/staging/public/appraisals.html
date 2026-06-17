@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Performance Appraisals | HRMS V2</title>
+    <link rel="icon" type="image/svg+xml" href="avant-garde-logo.svg">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+    <link rel="stylesheet" href="shared-styles.css">
+    <style>
+        .rating-stars {
+            display: flex;
+            gap: 4px;
+        }
+
+        .rating-stars .star {
+            font-size: 18px;
+            color: #d1d5db;
+            cursor: pointer;
+            transition: color 0.15s;
+        }
+
+        .rating-stars .star.filled {
+            color: #f59e0b;
+        }
+
+        .rating-stars .star:hover {
+            color: #fbbf24;
+        }
+
+        .cycle-card {
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: 20px;
+            background: var(--surface);
+            transition: box-shadow 0.2s;
+            cursor: pointer;
+        }
+
+        .cycle-card:hover {
+            box-shadow: var(--shadow-lg);
+        }
+
+        .cycle-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 12px;
+        }
+
+        .cycle-header h3 {
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        .cycle-meta {
+            display: flex;
+            gap: 16px;
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-bottom: 16px;
+        }
+
+        .cycle-meta span {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .cycle-progress {
+            height: 6px;
+            background: var(--border);
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        .cycle-progress-fill {
+            height: 100%;
+            background: var(--success);
+            border-radius: 3px;
+            transition: width 0.4s;
+        }
+
+        .cycle-progress-label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-top: 6px;
+        }
+
+        .appraisal-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+            gap: 16px;
+        }
+
+        .goal-item {
+            padding: 12px 0;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .goal-item:last-child {
+            border-bottom: none;
+        }
+
+        .goal-text {
+            font-size: 14px;
+            color: var(--text-main);
+        }
+
+        .goal-progress-mini {
+            width: 80px;
+            height: 4px;
+            background: var(--border);
+            border-radius: 2px;
+            overflow: hidden;
+        }
+
+        .goal-progress-mini div {
+            height: 100%;
+            background: var(--primary);
+            border-radius: 2px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="page-container">
+        <div class="page-header flex justify-between items-center">
+            <div>
+                <h1>Annual Performance Appraisal</h1>
+                <p>Manage appraisal cycles, goals, and employee evaluations</p>
+            </div>
+            <button class="btn btn-primary" onclick="ModalManager.open('new-cycle-modal')">
+                <i class="ri-add-line"></i> New Cycle
+            </button>
+        </div>
+
+        <!-- Stats -->
+        <div class="stats-row">
+            <div class="stat-card">
+                <div class="stat-icon blue"><i class="ri-file-list-3-line"></i></div>
+                <div>
+                    <div class="stat-value">2</div>
+                    <div class="stat-label">Active Cycles</div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon orange"><i class="ri-time-line"></i></div>
+                <div>
+                    <div class="stat-value">8</div>
+                    <div class="stat-label">Pending Reviews</div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon green"><i class="ri-checkbox-circle-line"></i></div>
+                <div>
+                    <div class="stat-value">15</div>
+                    <div class="stat-label">Completed Reviews</div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon purple"><i class="ri-star-line"></i></div>
+                <div>
+                    <div class="stat-value">4.2</div>
+                    <div class="stat-label">Avg Rating</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tabs -->
+        <div id="appraisal-tabs">
+            <div class="tab-nav">
+                <div class="tab-item active" data-tab="cycles">Appraisal Cycles</div>
+                <div class="tab-item" data-tab="reviews">Individual Reviews</div>
+                <div class="tab-item" data-tab="goals">Goal Tracking</div>
+            </div>
+
+            <!-- Cycles -->
+            <div class="tab-panel active" data-tab="cycles">
+                <div class="appraisal-grid">
+                    <div class="cycle-card">
+                        <div class="cycle-header">
+                            <h3>Q1 2026 Performance Review</h3>
+                            <span class="badge badge-green">Active</span>
+                        </div>
+                        <div class="cycle-meta">
+                            <span><i class="ri-calendar-line"></i> Jan 1 – Mar 31</span>
+                            <span><i class="ri-team-line"></i> 23 employees</span>
+                        </div>
+                        <div class="cycle-progress">
+                            <div class="cycle-progress-fill" style="width:65%"></div>
+                        </div>
+                        <div class="cycle-progress-label"><span>15 of 23 completed</span><span>65%</span></div>
+                    </div>
+
+                    <div class="cycle-card">
+                        <div class="cycle-header">
+                            <h3>Annual Review 2025</h3>
+                            <span class="badge badge-blue">In Review</span>
+                        </div>
+                        <div class="cycle-meta">
+                            <span><i class="ri-calendar-line"></i> Jan 1 – Dec 31, 2025</span>
+                            <span><i class="ri-team-line"></i> 20 employees</span>
+                        </div>
+                        <div class="cycle-progress">
+                            <div class="cycle-progress-fill" style="width:90%"></div>
+                        </div>
+                        <div class="cycle-progress-label"><span>18 of 20 completed</span><span>90%</span></div>
+                    </div>
+
+                    <div class="cycle-card" style="opacity:0.6;">
+                        <div class="cycle-header">
+                            <h3>Q4 2025 Performance Review</h3>
+                            <span class="badge badge-gray">Closed</span>
+                        </div>
+                        <div class="cycle-meta">
+                            <span><i class="ri-calendar-line"></i> Oct 1 – Dec 31, 2025</span>
+                            <span><i class="ri-team-line"></i> 20 employees</span>
+                        </div>
+                        <div class="cycle-progress">
+                            <div class="cycle-progress-fill" style="width:100%"></div>
+                        </div>
+                        <div class="cycle-progress-label"><span>20 of 20 completed</span><span>100%</span></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Individual Reviews -->
+            <div class="tab-panel" data-tab="reviews">
+                <div class="toolbar">
+                    <div class="toolbar-group">
+                        <div class="search-input">
+                            <i class="ri-search-line"></i>
+                            <input type="text" class="form-control form-control-sm" placeholder="Search employee..."
+                                style="padding-left:36px;width:260px;">
+                        </div>
+                        <select class="form-control form-control-sm" style="width:220px;">
+                            <option>Q1 2026 Performance Review</option>
+                            <option>Annual Review 2025</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="card" style="padding:0;overflow:hidden;">
+                    <div id="reviews-table"></div>
+                </div>
+            </div>
+
+            <!-- Goals -->
+            <div class="tab-panel" data-tab="goals">
+                <div class="card">
+                    <div class="card-header">
+                        <span class="card-title"><i class="ri-focus-3-line"></i> Team Goals — Q1 2026</span>
+                        <button class="btn btn-outline btn-sm"><i class="ri-add-line"></i> Add Goal</button>
+                    </div>
+                    <div class="goal-item">
+                        <div>
+                            <div class="goal-text">Complete customer onboarding module</div>
+                            <div class="text-xs text-muted mt-8">Joseph Okello · Engineering</div>
+                        </div>
+                        <div style="display:flex;align-items:center;gap:12px;">
+                            <div class="goal-progress-mini">
+                                <div style="width:80%"></div>
+                            </div>
+                            <span class="badge badge-green">80%</span>
+                        </div>
+                    </div>
+                    <div class="goal-item">
+                        <div>
+                            <div class="goal-text">Reduce employee turnover by 10%</div>
+                            <div class="text-xs text-muted mt-8">Atim Grace · Human Resources</div>
+                        </div>
+                        <div style="display:flex;align-items:center;gap:12px;">
+                            <div class="goal-progress-mini">
+                                <div style="width:45%"></div>
+                            </div>
+                            <span class="badge badge-orange">45%</span>
+                        </div>
+                    </div>
+                    <div class="goal-item">
+                        <div>
+                            <div class="goal-text">Launch Dubai payroll processing</div>
+                            <div class="text-xs text-muted mt-8">Omar Al-Rashid · Finance</div>
+                        </div>
+                        <div style="display:flex;align-items:center;gap:12px;">
+                            <div class="goal-progress-mini">
+                                <div style="width:100%"></div>
+                            </div>
+                            <span class="badge badge-green">Done</span>
+                        </div>
+                    </div>
+                    <div class="goal-item">
+                        <div>
+                            <div class="goal-text">Implement biometric attendance for Nairobi</div>
+                            <div class="text-xs text-muted mt-8">Sarah Wanjiku · Operations</div>
+                        </div>
+                        <div style="display:flex;align-items:center;gap:12px;">
+                            <div class="goal-progress-mini">
+                                <div style="width:20%"></div>
+                            </div>
+                            <span class="badge badge-red">20%</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- New Cycle Modal -->
+    <div class="modal-overlay" id="new-cycle-modal">
+        <div class="modal" style="max-width:500px;">
+            <div class="modal-header">
+                <h2>Create Appraisal Cycle</h2><button class="modal-close"><i class="ri-close-line"></i></button>
+            </div>
+            <div class="modal-body">
+                <form id="cycle-form" onsubmit="createCycle(event)">
+                    <div class="form-group">
+                        <label class="form-label">Cycle Name <span class="required">*</span></label>
+                        <input type="text" class="form-control" placeholder="e.g., Q2 2026 Review" required>
+                    </div>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label class="form-label">Start Date <span class="required">*</span></label>
+                            <input type="date" class="form-control" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">End Date <span class="required">*</span></label>
+                            <input type="date" class="form-control" required>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline"
+                    onclick="ModalManager.close('new-cycle-modal')">Cancel</button>
+                <button type="submit" form="cycle-form" class="btn btn-primary"><i class="ri-check-line"></i>
+                    Create</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="table-component.js"></script>
+    <script>
+        new TabSystem('#appraisal-tabs');
+
+        new DataTable('#reviews-table', {
+            columns: [
+                { key: 'employee', label: 'Employee', sortable: true, primary: true },
+                { key: 'department', label: 'Department', sortable: true },
+                { key: 'self_rating', label: 'Self Rating', sortable: true },
+                { key: 'manager_rating', label: 'Manager Rating', sortable: true },
+                { key: 'final_rating', label: 'Final', sortable: true },
+                { key: 'status', label: 'Status', sortable: true },
+                { key: 'actions', label: '' }
+            ],
+            data: [
+                { employee: 'Joseph Okello', department: 'Engineering', self_rating: '4.5', manager_rating: '4.2', final_rating: '4.3', status: 'completed' },
+                { employee: 'Atim Grace', department: 'Human Resources', self_rating: '4.0', manager_rating: '—', final_rating: '—', status: 'pending' },
+                { employee: 'Raj Patel', department: 'Finance', self_rating: '—', manager_rating: '—', final_rating: '—', status: 'pending' },
+                { employee: 'Sarah Wanjiku', department: 'Marketing', self_rating: '3.8', manager_rating: '4.0', final_rating: '3.9', status: 'completed' },
+                { employee: 'Omar Al-Rashid', department: 'Sales', self_rating: '4.2', manager_rating: '4.5', final_rating: '4.4', status: 'completed' },
+                { employee: 'Faith Nakamya', department: 'Engineering', self_rating: '—', manager_rating: '—', final_rating: '—', status: 'pending' },
+            ],
+            renderCell: {
+                status: (val) => statusBadge(val),
+                self_rating: (val) => val === '—' ? '<span class="text-muted">—</span>' : `<span style="font-weight:600">${val}</span> <span style="color:#f59e0b">★</span>`,
+                manager_rating: (val) => val === '—' ? '<span class="text-muted">—</span>' : `<span style="font-weight:600">${val}</span> <span style="color:#f59e0b">★</span>`,
+                final_rating: (val) => val === '—' ? '<span class="text-muted">—</span>' : `<span style="font-weight:700;color:var(--primary)">${val}</span>`,
+                actions: (val, row) => row.status === 'completed' ? '<button class="btn btn-outline btn-sm"><i class="ri-printer-line"></i> Report</button>' : ''
+            }
+        });
+
+        function createCycle(e) { e.preventDefault(); alert('Appraisal cycle created.'); ModalManager.close('new-cycle-modal'); }
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,14 @@
+{
+    "modules":  [
+                    "organization",
+                    "employee",
+                    "rbac",
+                    "attendance",
+                    "leave_management",
+                    "appraisal"
+                ],
+    "database_schema":  "database_schema_v1.6.9.sql",
+    "version":  "v1.6.9",
+    "release_date":  "2026-03-25",
+    "notes":  "v1.6.9: PRODUCTION STABILITY PATCH. Standardized RBAC roles (SUPER_ADMIN, ADMIN, etc.), seeded canonical permissions matrix, and restored production leave types."
+}

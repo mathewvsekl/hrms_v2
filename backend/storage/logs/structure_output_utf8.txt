@@ -1,0 +1,201 @@
+﻿
+Deprecated: The predefined locally scoped $http_response_header variable is deprecated, call http_get_last_response_headers() instead in C:\Users\AneeshMathew\HRMS V2\config\ProxyPDO.php on line 120
+--- leave_types ---
+Array
+(
+    [0] => Array
+        (
+            [Field] => id
+            [Type] => int(11)
+            [Null] => NO
+            [Key] => PRI
+            [Default] => 
+            [Extra] => auto_increment
+        )
+
+    [1] => Array
+        (
+            [Field] => company_id
+            [Type] => int(11)
+            [Null] => YES
+            [Key] => 
+            [Default] => 
+            [Extra] => 
+        )
+
+    [2] => Array
+        (
+            [Field] => name
+            [Type] => varchar(50)
+            [Null] => NO
+            [Key] => 
+            [Default] => 
+            [Extra] => 
+        )
+
+    [3] => Array
+        (
+            [Field] => code
+            [Type] => varchar(20)
+            [Null] => NO
+            [Key] => UNI
+            [Default] => 
+            [Extra] => 
+        )
+
+    [4] => Array
+        (
+            [Field] => display_code
+            [Type] => varchar(10)
+            [Null] => YES
+            [Key] => 
+            [Default] => 
+            [Extra] => 
+        )
+
+    [5] => Array
+        (
+            [Field] => is_paid
+            [Type] => tinyint(1)
+            [Null] => YES
+            [Key] => 
+            [Default] => 1
+            [Extra] => 
+        )
+
+    [6] => Array
+        (
+            [Field] => gender_restriction
+            [Type] => enum('male','female','none')
+            [Null] => YES
+            [Key] => 
+            [Default] => none
+            [Extra] => 
+        )
+
+    [7] => Array
+        (
+            [Field] => color_code
+            [Type] => varchar(10)
+            [Null] => YES
+            [Key] => 
+            [Default] => #6b7280
+            [Extra] => 
+        )
+
+    [8] => Array
+        (
+            [Field] => created_at_utc
+            [Type] => timestamp
+            [Null] => NO
+            [Key] => 
+            [Default] => current_timestamp()
+            [Extra] => 
+        )
+
+)
+
+--- office_attendance_status_definitions ---
+Array
+(
+    [0] => Array
+        (
+            [Field] => id
+            [Type] => int(11)
+            [Null] => NO
+            [Key] => PRI
+            [Default] => 
+            [Extra] => auto_increment
+        )
+
+    [1] => Array
+        (
+            [Field] => company_id
+            [Type] => int(11)
+            [Null] => NO
+            [Key] => MUL
+            [Default] => 
+            [Extra] => 
+        )
+
+    [2] => Array
+        (
+            [Field] => status_key
+            [Type] => varchar(50)
+            [Null] => NO
+            [Key] => 
+            [Default] => 
+            [Extra] => 
+        )
+
+    [3] => Array
+        (
+            [Field] => status_label
+            [Type] => varchar(100)
+            [Null] => NO
+            [Key] => 
+            [Default] => 
+            [Extra] => 
+        )
+
+    [4] => Array
+        (
+            [Field] => display_code
+            [Type] => varchar(10)
+            [Null] => YES
+            [Key] => 
+            [Default] => 
+            [Extra] => 
+        )
+
+    [5] => Array
+        (
+            [Field] => color_code
+            [Type] => varchar(20)
+            [Null] => YES
+            [Key] => 
+            [Default] => #3b82f6
+            [Extra] => 
+        )
+
+    [6] => Array
+        (
+            [Field] => is_default
+            [Type] => tinyint(1)
+            [Null] => YES
+            [Key] => 
+            [Default] => 0
+            [Extra] => 
+        )
+
+    [7] => Array
+        (
+            [Field] => sort_order
+            [Type] => int(11)
+            [Null] => YES
+            [Key] => 
+            [Default] => 0
+            [Extra] => 
+        )
+
+    [8] => Array
+        (
+            [Field] => created_at_utc
+            [Type] => timestamp
+            [Null] => NO
+            [Key] => 
+            [Default] => current_timestamp()
+            [Extra] => 
+        )
+
+    [9] => Array
+        (
+            [Field] => updated_at_utc
+            [Type] => timestamp
+            [Null] => NO
+            [Key] => 
+            [Default] => current_timestamp()
+            [Extra] => on update current_timestamp()
+        )
+
+)

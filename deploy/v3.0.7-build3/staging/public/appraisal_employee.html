@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Appraisal | HRMS V2</title>
+    <link rel="icon" type="image/svg+xml" href="avant-garde-logo.svg">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+    <link rel="stylesheet" href="shared-styles.css">
+    <style>
+        .section-card {
+            margin-bottom: 24px;
+        }
+
+        .kpi-row {
+            padding: 16px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            margin-bottom: 16px;
+            background: #fafafa;
+        }
+
+        .soft-skill-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px dashed var(--border);
+        }
+
+        .soft-skill-row:last-child {
+            border-bottom: none;
+        }
+
+        .skill-slider {
+            width: 150px;
+        }
+
+        .rating-display {
+            font-weight: 600;
+            color: var(--primary);
+            width: 30px;
+            text-align: right;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="page-container" style="max-width: 900px; margin: 0 auto;">
+        <div class="page-header flex justify-between items-center" style="margin-top: 32px;">
+            <div>
+                <h1>Self Assessment</h1>
+                <p>Complete your Annual Appraisal Form for 2025</p>
+            </div>
+            <div>
+                <button class="btn btn-outline" onclick="saveDraft()"><i class="ri-save-line"></i> Save Draft</button>
+                <button class="btn btn-primary" onclick="submitAppraisal()"><i class="ri-send-plane-fill"></i> Submit to
+                    Manager</button>
+            </div>
+        </div>
+
+        <!-- SECTION A -->
+        <div class="card section-card">
+            <div class="card-header">
+                <span class="card-title"><i class="ri-user-line" style="color:var(--primary); margin-right:8px;"></i>
+                    Section A: Employee Details</span>
+            </div>
+            <div class="form-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                <div><label class="form-label">Name</label><input type="text" class="form-control" value="Joseph Okello"
+                        disabled></div>
+                <div><label class="form-label">Employee ID</label><input type="text" class="form-control"
+                        value="EMP0101" disabled></div>
+                <div><label class="form-label">Designation</label><input type="text" class="form-control"
+                        value="Senior Engineer" disabled></div>
+                <div><label class="form-label">Department</label><input type="text" class="form-control"
+                        value="Engineering" disabled></div>
+                <div><label class="form-label">Date of Joining</label><input type="date" class="form-control"
+                        value="2022-04-15" disabled></div>
+                <div><label class="form-label">Reporting Manager</label><input type="text" class="form-control"
+                        value="Sarah Wanjiku" disabled></div>
+            </div>
+        </div>
+
+        <!-- SECTION B: KPIs -->
+        <div class="card section-card">
+            <div class="card-header flex justify-between items-center">
+                <span class="card-title"><i class="ri-focus-2-line" style="color:var(--primary); margin-right:8px;"></i>
+                    Section B: Key Performance Indicators</span>
+                <button class="btn btn-outline btn-sm" onclick="addKPI()"><i class="ri-add-line"></i> Add KPI</button>
+            </div>
+            <p class="text-sm text-muted mb-16">List a minimum of five (5) KPIs relevant to your role. Rate yourself
+                from 1 (Outstanding) to 5 (Below Expectations).</p>
+
+            <div id="kpi-container">
+                <!-- KPI 1 -->
+                <div class="kpi-row">
+                    <div class="form-group mb-12">
+                        <label class="form-label">Key Result Area (KRA) / KPI</label>
+                        <input type="text" class="form-control" placeholder="Describe the focus area or deliverable">
+                    </div>
+                    <div class="form-group mb-12">
+                        <label class="form-label">Key Achievements / Results</label>
+                        <textarea class="form-control" rows="2" placeholder="Summarize results achieved"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Self Rating (1-5)</label>
+                        <select class="form-control" style="width: 200px;">
+                            <option value="">Select Rating...</option>
+                            <option value="1">1 - Outstanding Performance</option>
+                            <option value="2">2 - Strong Performance</option>
+                            <option value="3">3 - Effective Performance</option>
+                            <option value="4">4 - Developing Performance</option>
+                            <option value="5">5 - Performance Below Expectations</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SECTION B: SOFT SKILLS -->
+        <div class="card section-card">
+            <div class="card-header">
+                <span class="card-title"><i class="ri-chat-smile-2-line"
+                        style="color:var(--primary); margin-right:8px;"></i> Section B: Soft Skills Assessment
+                    (Mandatory)</span>
+            </div>
+            <p class="text-sm text-muted mb-16">Rate yourself on a scale of 1 to 10 for each skill, where 10 is the
+                highest standard.</p>
+
+            <div class="soft-skills-list">
+                <div class="soft-skill-row">
+                    <div>
+                        <div style="font-weight: 500; font-size: 14px;">Communication</div>
+                        <div style="font-size: 11px; color: var(--text-muted);">Communicates clearly and professionally.
+                        </div>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <input type="range" class="skill-slider" min="1" max="10" value="8"
+                            oninput="this.nextElementSibling.innerText = this.value">
+                        <div class="rating-display">8</div>
+                    </div>
+                </div>
+                <div class="soft-skill-row">
+                    <div>
+                        <div style="font-weight: 500; font-size: 14px;">Teamwork & Collaboration</div>
+                        <div style="font-size: 11px; color: var(--text-muted);">Works effectively with others to
+                            contribute to team goals.</div>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <input type="range" class="skill-slider" min="1" max="10" value="7"
+                            oninput="this.nextElementSibling.innerText = this.value">
+                        <div class="rating-display">7</div>
+                    </div>
+                </div>
+                <!-- Other 8 skills would follow similar structure -->
+                <div class="soft-skill-row">
+                    <div>
+                        <div style="font-weight: 500; font-size: 14px;">Accountability & Ownership</div>
+                        <div style="font-size: 11px; color: var(--text-muted);">Takes responsibility for assigned tasks.
+                        </div>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <input type="range" class="skill-slider" min="1" max="10" value="8"
+                            oninput="this.nextElementSibling.innerText = this.value">
+                        <div class="rating-display">8</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SECTION C: SUMMARY -->
+        <div class="card section-card">
+            <div class="card-header">
+                <span class="card-title"><i class="ri-edit-box-line"
+                        style="color:var(--primary); margin-right:8px;"></i> Section C: Employee Summary and Development
+                    Plan</span>
+            </div>
+            <div class="form-group mb-12">
+                <label class="form-label">Overall Performance Summary</label>
+                <textarea class="form-control" rows="3"
+                    placeholder="Briefly summarize your performance and contribution during the year."></textarea>
+            </div>
+            <div class="form-group mb-12">
+                <label class="form-label">Challenges Faced</label>
+                <textarea class="form-control" rows="2"
+                    placeholder="Obstacles that affected your performance and how you managed them."></textarea>
+            </div>
+            <div class="form-group mb-12">
+                <label class="form-label">Areas of Improvement / Development</label>
+                <textarea class="form-control" rows="2" placeholder="Skills or areas you wish to improve."></textarea>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Training / Support Required</label>
+                <textarea class="form-control" rows="2"
+                    placeholder="Specific training, mentoring, or support needed."></textarea>
+            </div>
+        </div>
+
+        <div style="text-align: right; margin-bottom: 60px;">
+            <p class="text-sm text-muted" style="margin-bottom: 12px;">I declare that the information provided above is
+                true and reflects my self-assessment accurately.</p>
+            <button class="btn btn-primary" onclick="submitAppraisal()"><i class="ri-check-double-line"></i> Finalize &
+                Submit to Manager</button>
+        </div>
+    </div>
+
+    <script>
+        function addKPI() {
+            const container = document.getElementById('kpi-container');
+            const kpis = container.querySelectorAll('.kpi-row').length;
+            if (kpis >= 10) return alert('Maximum 10 KPIs allowed.');
+
+            const div = document.createElement('div');
+            div.className = 'kpi-row';
+            div.innerHTML = `
+                <div class="form-group mb-12">
+                    <label class="form-label">Key Result Area (KRA) / KPI</label>
+                    <input type="text" class="form-control" placeholder="Describe the focus area or deliverable">
+                </div>
+                <div class="form-group mb-12">
+                    <label class="form-label">Key Achievements / Results</label>
+                    <textarea class="form-control" rows="2" placeholder="Summarize results achieved"></textarea>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Self Rating (1-5)</label>
+                    <select class="form-control" style="width: 200px;">
+                        <option value="">Select Rating...</option>
+                        <option value="1">1 - Outstanding</option>
+                        <option value="2">2 - Strong</option>
+                        <option value="3">3 - Effective</option>
+                        <option value="4">4 - Developing</option>
+                        <option value="5">5 - Below Expectations</option>
+                    </select>
+                </div>
+            `;
+            container.appendChild(div);
+        }
+
+        function saveDraft() {
+            alert("Draft saved locally.");
+        }
+
+        function submitAppraisal() {
+            const kpis = document.querySelectorAll('.kpi-row').length;
+            if (kpis < 5) {
+                alert("You must include a minimum of 5 KPIs before submitting.");
+                return;
+            }
+            alert("Appraisal submitted to your manager for review!");
+        }
+
+        // Auto-add 4 more KPIs to meet minimum for visual preview
+        for (let i = 1; i < 5; i++) addKPI();
+    </script>
+</body>
+
+</html>

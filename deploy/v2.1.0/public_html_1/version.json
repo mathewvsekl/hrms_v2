@@ -1,0 +1,21 @@
+{
+    "baseline":  "v2.0.1",
+    "migration_patch":  null,
+    "modules":  [
+                    "organization",
+                    "employee",
+                    "rbac",
+                    "attendance",
+                    "leave_management",
+                    "appraisal",
+                    "assets",
+                    "holidays",
+                    "notifications",
+                    "email_system"
+                ],
+    "database_schema":  "database_schema_v2.1.0.sql",
+    "build_number":  "2100",
+    "version":  "v2.1.0",
+    "release_date":  "2026-03-29",
+    "notes":  "v2.1.0: PRODUCTION RELEASE. Full implementation of Email Notification System with PHPMailer."
+}

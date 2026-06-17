@@ -1,0 +1,21 @@
+# HRMS v3.0.8-build5 Post-Upload Instructions (DirectAdmin)
+
+1. UPLOAD
+   - Upload 'HRMS_V2_v2.1.0_FULL.zip' to your domain root (the folder containing public_html and private).
+
+2. EXTRACT
+   - Extract the ZIP. This will perfectly populate:
+     - public_html/ (Main web source)
+     - private/ (Internal codebase: config, database, public, scripts, storage)
+     - .env.example
+     - VERSION
+
+3. INITIALIZE DATABASE
+   - Via phpMyAdmin, import 'database/schema.sql' then 'database/seed.sql'.
+
+4. SETUP config/config.php
+   - In 'config/', rename 'config.template.php' to 'config.php'.
+   - Update database and SMTP credentials.
+
+5. VERIFY
+   - Access your domain to log in.

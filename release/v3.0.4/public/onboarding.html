@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dynamic HR Onboarding | HRMS V2</title>
+    <link rel="icon" type="image/svg+xml" href="avant-garde-logo.svg">
+    <!-- Using Inter for a modern, clean typography -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #0F5E3A;
+            --primary-hover: #0B3E28;
+            --background: #f8fafc;
+            --surface: #ffffff;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --border: #e2e8f0;
+            --success: #10b981;
+            --error: #ef4444;
+            --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--background);
+            color: var(--text-main);
+            margin: 0;
+            padding: 40px 20px;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 600px;
+            background: var(--surface);
+            border-radius: 12px;
+            box-shadow: var(--shadow);
+            padding: 32px;
+            animation: fadeIn 0.4s ease-out forwards;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .company-logo {
+            max-width: 180px;
+            height: auto;
+            margin-bottom: 24px;
+            display: block;
+        }
+
+        h1 {
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: var(--text-main);
+        }
+
+        p.subtitle {
+            font-size: 14px;
+            color: var(--text-muted);
+            margin-bottom: 24px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+            display: flex;
+            flex-direction: column;
+            opacity: 1;
+            transition: opacity 0.3s ease;
+        }
+
+        .form-group.fade-enter {
+            animation: fadeSlide 0.3s ease forwards;
+        }
+
+        @keyframes fadeSlide {
+            from {
+                opacity: 0;
+                transform: translateX(-5px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        label {
+            font-size: 14px;
+            font-weight: 500;
+            margin-bottom: 6px;
+            color: var(--text-main);
+        }
+
+        .required-star {
+            color: var(--error);
+            margin-left: 2px;
+        }
+
+        input[type="text"],
+        input[type="email"],
+        select {
+            width: 100%;
+            padding: 10px 12px;
+            font-size: 14px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            background-color: var(--surface);
+            color: var(--text-main);
+            outline: none;
+            transition: border-color 0.2s, box-shadow 0.2s;
+            box-sizing: border-box;
+            font-family: 'Inter', sans-serif;
+        }
+
+        input[type="text"]:focus,
+        input[type="email"]:focus,
+        select:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+
+        .divider {
+            height: 1px;
+            background-color: var(--border);
+            margin: 24px 0;
+        }
+
+        .section-title {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+        }
+
+        #dynamicFieldsContainer {
+            min-height: 80px;
+            /* Prevent layout jump */
+        }
+
+        button.submit-btn {
+            width: 100%;
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 12px;
+            font-size: 15px;
+            font-weight: 500;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background-color 0.2s, transform 0.1s;
+            margin-top: 10px;
+        }
+
+        button.submit-btn:hover {
+            background-color: var(--primary-hover);
+        }
+
+        button.submit-btn:active {
+            transform: scale(0.98);
+        }
+
+        .feedback {
+            margin-top: 16px;
+            padding: 12px;
+            border-radius: 6px;
+            font-size: 14px;
+            display: none;
+        }
+
+        .feedback.success {
+            background-color: rgba(16, 185, 129, 0.1);
+            color: var(--success);
+            border: 1px solid rgba(16, 185, 129, 0.2);
+            display: block;
+        }
+
+        .feedback.error {
+            background-color: rgba(239, 68, 68, 0.1);
+            color: var(--error);
+            border: 1px solid rgba(239, 68, 68, 0.2);
+            display: block;
+        }
+
+        .loading-text {
+            color: var(--text-muted);
+            font-size: 13px;
+            font-style: italic;
+            display: none;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+        <div class="logo-container">
+            <img src="LOGO.png" alt="Enterprise Logo" class="company-logo">
+        </div>
+        <h1>Employee Onboarding</h1>
+        <p class="subtitle">Enter basic details. Compliance fields will generate dynamically based on the target office.
+        </p>
+
+        <div id="feedbackBox" class="feedback"></div>
+
+        <form id="onboardingForm">
+            <div class="form-group">
+                <label for="first_name">First Name <span class="required-star">*</span></label>
+                <input type="text" id="first_name" name="first_name" required>
+            </div>
+
+            <div class="form-group">
+                <label for="last_name">Last Name <span class="required-star">*</span></label>
+                <input type="text" id="last_name" name="last_name" required>
+            </div>
+
+            <div class="form-group">
+                <label for="email">Work Email <span class="required-star">*</span></label>
+                <input type="email" id="email" name="email" required>
+            </div>
+
+            <div class="form-group">
+                <label for="office_id">Assign Office <span class="required-star">*</span></label>
+                <select id="office_id" name="office_id" required onchange="handleOfficeChange()">
+                    <option value="" disabled selected>Select an Office...</option>
+                    <option value="1">Dubai Head Office (UAE)</option>
+                    <option value="2">Nairobi Corporate Center (Kenya)</option>
+                    <option value="6">Mumbai Development Center (India)</option>
+                </select>
+            </div>
+
+            <div class="divider"></div>
+
+            <div class="section-title">
+                Regional Compliance Data
+                <span id="loadingIndicator" class="loading-text" style="margin-left: 10px;">Loading template...</span>
+            </div>
+
+            <!-- Regional custom fields injected here -->
+            <div id="dynamicFieldsContainer">
+                <p style="font-size: 13px; color: var(--text-muted);">Please select an office above to load mandatory
+                    compliance fields.</p>
+            </div>
+
+            <button type="submit" class="submit-btn" id="submitBtn">Onboard Employee</button>
+        </form>
+    </div>
+
+    <script>
+        // Mock Data mimicking the GET /offices/templates/{id} endpoint from OfficeController
+        const MOCK_API_TEMPLATES = {
+            "1": [
+                { field_key: "emirates_id", field_name: "Emirates ID", field_type: "text", is_required: true },
+                { field_key: "wps_routing_code", field_name: "WPS Routing Code", field_type: "text", is_required: true }
+            ],
+            "2": [
+                { field_key: "kra_pin", field_name: "KRA PIN", field_type: "text", is_required: true },
+                { field_key: "national_id", field_name: "National ID", field_type: "text", is_required: true },
+                { field_key: "sha_number", field_name: "SHA Number", field_type: "text", is_required: true },
+                { field_key: "nssf_number", field_name: "NSSF Number", field_type: "text", is_required: true }
+            ],
+            "6": [
+                { field_key: "pan_number", field_name: "PAN", field_type: "text", is_required: true },
+                { field_key: "aadhaar_number", field_name: "Aadhaar Card", field_type: "text", is_required: true },
+                { field_key: "uan_number", field_name: "UAN (EPF)", field_type: "text", is_required: true }
+            ]
+        };
+
+        let currentRenderId = 0;
+
+        function handleOfficeChange() {
+            const officeId = document.getElementById('office_id').value;
+            const container = document.getElementById('dynamicFieldsContainer');
+            const loading = document.getElementById('loadingIndicator');
+
+            const renderId = ++currentRenderId;
+
+            // In a real app, this would be a fetch() call
+            // fetch(`/api/offices/templates/${officeId}`).then(...)
+
+            container.innerHTML = '';
+            loading.style.display = 'inline-block';
+
+            // Simulate network delay for premium feel
+            setTimeout(() => {
+                if (renderId !== currentRenderId) return; // Abort if another office was selected
+
+                const fields = MOCK_API_TEMPLATES[officeId] || [];
+
+                if (fields.length === 0) {
+                    container.innerHTML = '<p style="font-size: 13px; color: var(--text-muted);">No compliance fields required for this region.</p>';
+                    loading.style.display = 'none';
+                } else {
+                    fields.forEach((field, index) => {
+                        // Stagger animation slightly
+                        setTimeout(() => {
+                            if (renderId !== currentRenderId) return; // Abort staggered render if office changed
+
+                            const formGroup = document.createElement('div');
+                            formGroup.className = 'form-group fade-enter';
+
+                            const requiredStar = field.is_required ? '<span class="required-star">*</span>' : '';
+                            const requiredAttr = field.is_required ? 'required' : '';
+
+                            formGroup.innerHTML = `
+                            <label for="custom_${field.field_key}">${field.field_name} ${requiredStar}</label>
+                            <input type="${field.field_type === 'text' ? 'text' : 'text'}" 
+                                   id="custom_${field.field_key}" 
+                                   name="custom_fields[${field.field_key}]" 
+                                   ${requiredAttr} 
+                                   placeholder="Enter ${field.field_name}">
+                        `;
+                            container.appendChild(formGroup);
+
+                            // Hide loading indicator after the last field is injected
+                            if (index === fields.length - 1) {
+                                loading.style.display = 'none';
+                            }
+                        }, index * 80); // 80ms delay between each field appearing
+                    });
+                }
+            }, 300);
+        }
+
+        document.getElementById('onboardingForm').addEventListener('submit', function (e) {
+            e.preventDefault();
+            const btn = document.getElementById('submitBtn');
+            const feedback = document.getElementById('feedbackBox');
+
+            btn.innerHTML = 'Processing...';
+            btn.disabled = true;
+            feedback.className = 'feedback';
+
+            // Construct payload mimicking POST /employees/onboard interaction
+            const formData = new FormData(this);
+            const payload = {
+                first_name: formData.get('first_name'),
+                last_name: formData.get('last_name'),
+                email: formData.get('email'),
+                office_id: parseInt(formData.get('office_id')),
+                custom_fields: {}
+            };
+
+            // Extract customized fields
+            for (let [key, value] of formData.entries()) {
+                if (key.startsWith('custom_fields[')) {
+                    const plainKey = key.replace('custom_fields[', '').replace(']', '');
+                    payload.custom_fields[plainKey] = value;
+                }
+            }
+
+            console.log("Submitting payload to EmployeeController->save():", payload);
+
+            // Simulate API Processing delay
+            setTimeout(() => {
+                // Pseudo-validation success
+                feedback.innerHTML = `Success! ${payload.first_name} has been onboarded to Office ID ${payload.office_id}. Compliance data captured efficiently.`;
+                feedback.className = 'feedback success';
+                btn.innerHTML = 'Onboard Employee';
+                btn.disabled = false;
+                this.reset();
+                document.getElementById('dynamicFieldsContainer').innerHTML = '<p style="font-size: 13px; color: var(--text-muted);">Please select an office above to load mandatory compliance fields.</p>';
+            }, 800);
+        });
+    </script>
+
+</body>
+
+</html>

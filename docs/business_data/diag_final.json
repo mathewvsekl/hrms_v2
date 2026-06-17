@@ -1,0 +1,12 @@
+{
+    "angela": {
+        "id": 301,
+        "nationality": "Kenya",
+        "company_id": 1,
+        "country_id": 1,
+        "country_name": "United Arab Emirates",
+        "iso_code": "ARE"
+    },
+    "public_holidays": [],
+    "schedules": []
+}

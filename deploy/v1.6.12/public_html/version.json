@@ -1,0 +1,15 @@
+{
+    "modules":  [
+                    "organization",
+                    "employee",
+                    "rbac",
+                    "attendance",
+                    "leave_management",
+                    "appraisal",
+                    "assets"
+                ],
+    "database_schema":  "migration_patch_v1.6.10_CONSOLIDATED.sql",
+    "version":  "v1.6.12",
+    "release_date":  "2026-03-25",
+    "notes":  "v1.6.12: COMPLIANCE REFACTOR. Removed nationality-based labels (TIN/NSSF) from profile. Compliance fields are now strictly office-defined via custom fields."
+}
