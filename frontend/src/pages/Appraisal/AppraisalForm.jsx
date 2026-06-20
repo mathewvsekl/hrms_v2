@@ -1,11 +1,25 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Save, Send, CheckCircle, ChevronLeft, User, BarChart, FileText, Settings, Star, AlertCircle } from 'lucide-react';
+import { Save, Send, CheckCircle, ChevronLeft, User, BarChart, FileText, Settings, Star, AlertCircle, ChevronDown, ChevronUp } from 'lucide-react';
 import api from '../../services/api';
 import useAuthStore from '../../store/useAuthStore';
 import useLayoutStore from '../../store/useLayoutStore';
 import useNotificationStore from '../../store/useNotificationStore';
 import { formatDate } from '../../utils/dateUtils';
+import { ROLE_IDS } from '../../utils/roleConstants';
+
+const SOFTSKILL_DESCRIPTIONS = {
+    'Communication': 'Communicates clearly and professionally with colleagues, customers, and stakeholders.',
+    'Teamwork & Collaboration': 'Works effectively with others and contributes positively to team goals.',
+    'Accountability & Ownership': 'Takes responsibility for assigned tasks and ensures work is completed as expected.',
+    'Professional Conduct': 'Demonstrates professionalism, respect, and appropriate workplace behavior.',
+    'Adaptability & Flexibility': 'Adjusts effectively to changes in work, priorities, or environment.',
+    'Initiative & Proactiveness': 'Shows willingness to take initiative and go beyond assigned responsibilities when required.',
+    'Problem-Solving Ability': 'Approaches challenges logically and contributes to effective solutions.',
+    'Time Management & Discipline': 'Manages time effectively and meets deadlines consistently.',
+    'Quality & Attention to Detail': 'Maintains accuracy and quality in work outputs.',
+    'Integrity and Work Ethics': 'Acts with honesty, reliability, and adherence to company values.'
+};
 
 const AppraisalForm = () => {
     const { id } = useParams();
@@ -27,6 +41,11 @@ const AppraisalForm = () => {
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [activeTab, setActiveTab] = useState('performance');
+    const [openSection, setOpenSection] = useState(null);
+
+    const toggleSection = (sec) => {
+        setOpenSection(openSection === sec ? null : sec);
+    };
 
     useEffect(() => {
         fetchData();
@@ -73,7 +92,7 @@ const AppraisalForm = () => {
         if (appraisal.status === 'finalized') return;
 
         setRatings(prev => {
-            const index = prev.findIndex(r => r.question_id === qId);
+            const index = prev.findIndex(r => r.question_id == qId);
             const newList = [...prev];
             if (index > -1) {
                 newList[index] = { ...newList[index], [type]: val };
@@ -109,14 +128,31 @@ const AppraisalForm = () => {
             };
 
             // Validation for submission using dynamic requirement
+            const isEmployee = user?.employee_id == appraisal?.employee_id || user?.id == appraisal?.employee_id;
             if (submitStatus === 'manager' && isEmployee) {
-                const minRequired = appraisal.min_kpis_required || 3;
-                const kpiCount = ratings.filter(r => r.kra_name && r.kra_name.trim() !== '').length;
-                if (kpiCount < minRequired) {
-                    showAlert('Validation Error', `Minimum ${minRequired} KPIs are required for your department before submitting.`, 'error');
+                const minRequired = appraisal.min_kpis_required !== undefined ? appraisal.min_kpis_required : 3;
+                const addedKpis = ratings.filter(r => !r.question_id);
+                
+                // Validate that added KPIs are fully filled out
+                for (const kpi of addedKpis) {
+                    if (!kpi.kra_name || kpi.kra_name.trim() === '') {
+                        showAlert('Validation Error', 'Please fill in the KRA / KPI Area name for all added KPIs, or remove the blank ones.', 'error');
+                        return;
+                    }
+                    if (!kpi.employee_rating || kpi.employee_rating === 0) {
+                        showAlert('Validation Error', `Please provide a Self Rating for KPI: ${kpi.kra_name}`, 'error');
+                        return;
+                    }
+                }
+
+                if (addedKpis.length < minRequired) {
+                    showAlert('Validation Error', `Minimum ${minRequired} KPIs are required before submitting. You have ${addedKpis.length}.`, 'error');
                     return;
                 }
             }
+
+            // Always save current state first
+            await api.post('/appraisals/draft', payload);
 
             let res;
             if (submitStatus === 'manager') {
@@ -140,8 +176,7 @@ const AppraisalForm = () => {
                 const msg = res.data.message || (res.data.data && res.data.data.message) || 'Appraisal Finalized';
                 showAlert('Success', msg, 'success');
             } else {
-                res = await api.post('/appraisals/draft', payload);
-                const msg = res.data.message || (res.data.data && res.data.data.message) || 'Draft saved successfully';
+                const msg = 'Draft saved successfully';
                 showAlert('Success', msg, 'success');
             }
 
@@ -158,15 +193,17 @@ const AppraisalForm = () => {
     if (!appraisal) return <div style={{ padding: '40px', textAlign: 'center' }}>Appraisal not found</div>;
 
     const isAppraisee = user?.employee_id == appraisal.employee_id || user?.id == appraisal.employee_id;
-    const isManagerRole = user?.role === 'HR Manager' || user?.role === 'CountryManager';
+    const isSuperAdmin = user?.role_id === ROLE_IDS.SUPER_ADMIN || user?.role_id === ROLE_IDS.ADMIN;
+    const isManagerRole = isSuperAdmin || useAuthStore.getState().hasPermission('appraisals', 'approve');
     const isDirectManager = user?.employee_id == appraisal.reporting_manager_id || user?.id == appraisal.reporting_manager_id;
-    const isHR = user?.role === 'HR Manager' || user?.role === 'HRAssistant' || user?.role === 'Super Admin';
+    const isHR = isSuperAdmin || useAuthStore.getState().hasPermission('appraisals', 'edit');
 
-    // A person can edit as an employee if it's their own appraisal, OR if they're literally the 'Employee' role testing it
-    const canEditEmployee = appraisal.status === 'draft' && (isAppraisee || user?.role === 'Employee');
-    
+    // A person can edit as an employee if it's their own appraisal
+    // Feature: Employee can edit until manager approves (hr_calibration)
     const isManagerTier = ['l1_review', 'l2_review', 'l3_review'].includes(appraisal.status);
-    const canEditManager = isManagerTier && (isManagerRole || isDirectManager); // Backend validates exact manager identity
+    const canEditEmployee = (appraisal.status === 'draft' || isManagerTier) && (isAppraisee || (user?.role_id === ROLE_IDS.EMPLOYEE && isAppraisee));
+    
+    const canEditManager = isManagerTier && (isManagerRole || isDirectManager) && !isAppraisee; // Backend validates exact manager identity
     const canEditHR = appraisal.status === 'hr_calibration' && isHR;
 
     return (
@@ -177,7 +214,7 @@ const AppraisalForm = () => {
                     <Save size={18} /> {saving ? 'Saving...' : 'Save Draft'}
                 </button>
 
-                {canEditEmployee && (
+                {canEditEmployee && appraisal.status === 'draft' && (
                     <button className="btn btn-primary" onClick={() => onSave('manager')}>
                         <Send size={18} /> Submit to Manager
                     </button>
@@ -294,120 +331,147 @@ const AppraisalForm = () => {
             <div className="card" style={{ marginBottom: '24px' }}>
                 <div style={{ padding: '32px' }}>
                     {/* SECTION A: Soft Skills */}
-                    <div style={{ marginBottom: '48px' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px', paddingBottom: '12px', borderBottom: '1px solid #e2e8f0' }}>
-                            <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'var(--color-rose-gold)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold' }}>A</div>
-                            <h2 style={{ margin: 0, fontSize: '1.25rem' }}>Core Soft Skills & Competencies</h2>
+                    <div style={{ marginBottom: '24px', border: '1px solid #e2e8f0', borderRadius: '8px', overflow: 'hidden', background: '#fff' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 24px', background: '#f8fafc', cursor: 'pointer' }} onClick={() => toggleSection('A')}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'var(--color-rose-gold)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold' }}>A</div>
+                                <h2 style={{ margin: 0, fontSize: '1.25rem' }}>Core Soft Skills & Competencies</h2>
+                            </div>
+                            {openSection === 'A' ? <ChevronUp size={24} color="#64748b" /> : <ChevronDown size={24} color="#64748b" />}
                         </div>
                         
-                        <div className="ratings-grid">
-                            {template?.questions.filter(q => q.section === 'B_SOFT_SKILL').map((q) => {
-                                const ratingObj = ratings.find(r => r.question_id === q.id) || {};
-                                return (
-                                    <div key={q.id} style={{ padding: '20px', border: '1px solid #e2e8f0', borderRadius: '8px', marginBottom: '16px', background: '#f8fafc' }}>
-                                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
-                                            <h4 style={{ margin: 0, fontSize: '1rem', fontWeight: 600 }}>{q.question_text}</h4>
-                                        </div>
-
-                                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '32px' }}>
-                                            <div>
-                                                <label style={{ display: 'block', fontSize: '0.85rem', marginBottom: '8px', color: '#64748b' }}>Employee Self Rating (1-10)</label>
-                                                <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
-                                                    {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(val => (
-                                                        <button key={val} 
-                                                            style={{ 
-                                                                width: '32px', height: '32px', borderRadius: '4px', border: '1px solid ' + (ratingObj.employee_rating === val ? 'var(--color-rose-gold)' : '#e2e8f0'),
-                                                                background: ratingObj.employee_rating === val ? 'var(--color-rose-gold)' : '#fff',
-                                                                color: ratingObj.employee_rating === val ? '#fff' : '#1e293b',
-                                                                cursor: 'pointer', fontSize: '0.8rem'
-                                                            }}
-                                                            onClick={() => handleRatingChange(q.id, 'employee_rating', val)}
-                                                        >{val}</button>
-                                                    ))}
-                                                </div>
-                                            </div>
-                                            <div>
-                                                <label style={{ display: 'block', fontSize: '0.85rem', marginBottom: '8px', color: '#64748b' }}>Manager's Rating (1-10)</label>
-                                                <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
-                                                    {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(val => (
-                                                        <button key={val} 
-                                                            style={{ 
-                                                                width: '32px', height: '32px', borderRadius: '4px', border: '1px solid ' + (ratingObj.manager_rating === val ? 'var(--color-rose-gold)' : '#e2e8f0'),
-                                                                background: ratingObj.manager_rating === val ? 'var(--color-rose-gold)' : '#fff',
-                                                                color: ratingObj.manager_rating === val ? '#fff' : '#1e293b',
-                                                                cursor: 'pointer', fontSize: '0.8rem'
-                                                            }}
-                                                            onClick={() => handleRatingChange(q.id, 'manager_rating', val)}
-                                                        >{val}</button>
-                                                    ))}
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                );
-                            })}
+                        {openSection === 'A' && (
+                            <div style={{ padding: '24px', borderTop: '1px solid #e2e8f0' }}>
+                                <div className="table-responsive">
+                            <table style={{ width: '100%', borderCollapse: 'collapse', border: '1px solid #e2e8f0' }}>
+                                <thead>
+                                    <tr style={{ background: '#f8fafc' }}>
+                                        <th style={{ padding: '12px', border: '1px solid #e2e8f0', textAlign: 'left', fontWeight: 600 }}>Soft Skills</th>
+                                        <th style={{ padding: '12px', border: '1px solid #e2e8f0', textAlign: 'left', fontWeight: 600 }}>Guiding Description (for reference Only)</th>
+                                        <th style={{ padding: '12px', border: '1px solid #e2e8f0', textAlign: 'center', fontWeight: 600 }}>Employee Rating</th>
+                                        <th style={{ padding: '12px', border: '1px solid #e2e8f0', textAlign: 'center', fontWeight: 600 }}>Manager Rating</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {template?.questions.filter(q => q.section === 'B_SOFT_SKILL').map((q) => {
+                                        const ratingObj = ratings.find(r => r.question_id == q.id) || {};
+                                        const description = q.description || SOFTSKILL_DESCRIPTIONS[q.question_text] || '';
+                                        const maxRating = q.rating_scale_max || 5;
+                                        const scaleOptions = Array.from({length: maxRating}, (_, i) => i + 1);
+                                        return (
+                                            <tr key={q.id}>
+                                                <td style={{ padding: '12px', border: '1px solid #e2e8f0', fontWeight: 500 }}>{q.question_text}</td>
+                                                <td style={{ padding: '12px', border: '1px solid #e2e8f0', fontSize: '0.9rem', color: '#64748b' }}>{description}</td>
+                                                <td style={{ padding: '12px', border: '1px solid #e2e8f0', textAlign: 'center' }}>
+                                                    <select className="form-input" style={{ width: '100%', padding: '6px' }} value={Number(ratingObj.employee_rating) || 0} onChange={e => {
+                                                            canEditEmployee && handleRatingChange(q.id, 'employee_rating', parseInt(e.target.value));
+                                                        }} disabled={!canEditEmployee}>
+                                                        <option value="0">Select...</option>
+                                                        {scaleOptions.map(val => (
+                                                            <option key={val} value={val}>{val}</option>
+                                                        ))}
+                                                    </select>
+                                                </td>
+                                                <td style={{ padding: '12px', border: '1px solid #e2e8f0', textAlign: 'center' }}>
+                                                    <select className="form-input" style={{ width: '100%', padding: '6px', borderColor: 'var(--color-rose-gold)' }} value={Number(ratingObj.manager_rating) || 0} onChange={e => {
+                                                            canEditManager && handleRatingChange(q.id, 'manager_rating', parseInt(e.target.value));
+                                                        }} disabled={!canEditManager}>
+                                                        <option value="0">Select...</option>
+                                                        {scaleOptions.map(val => (
+                                                            <option key={val} value={val}>{val}</option>
+                                                        ))}
+                                                    </select>
+                                                </td>
+                                            </tr>
+                                        );
+                                    })}
+                                    <tr style={{ background: '#f1f5f9', fontWeight: 600 }}>
+                                        <td colSpan="2" style={{ padding: '12px', border: '1px solid #e2e8f0', textAlign: 'left' }}>Overall Rating</td>
+                                        <td style={{ padding: '12px', border: '1px solid #e2e8f0', textAlign: 'center' }}>
+                                            {template?.questions.filter(q => q.section === 'B_SOFT_SKILL').reduce((sum, q) => sum + (Number(ratings.find(r => r.question_id == q.id)?.employee_rating) || 0), 0)}
+                                        </td>
+                                        <td style={{ padding: '12px', border: '1px solid #e2e8f0', textAlign: 'center', color: 'var(--color-rose-gold)' }}>
+                                            {template?.questions.filter(q => q.section === 'B_SOFT_SKILL').reduce((sum, q) => sum + (Number(ratings.find(r => r.question_id == q.id)?.manager_rating) || 0), 0)}
+                                        </td>
+                                    </tr>
+                                </tbody>
+                                </table>
+                            </div>
                         </div>
+                        )}
                     </div>
 
                     {/* SECTION B: Performance KPIs */}
-                    <div style={{ marginBottom: '48px' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', paddingBottom: '12px', borderBottom: '1px solid #e2e8f0' }}>
+                    <div style={{ marginBottom: '24px', border: '1px solid #e2e8f0', borderRadius: '8px', overflow: 'hidden', background: '#fff' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 24px', background: '#f8fafc', cursor: 'pointer' }} onClick={() => toggleSection('B')}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                                 <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'var(--color-rose-gold)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold' }}>B</div>
                                 <h2 style={{ margin: 0, fontSize: '1.25rem' }}>Performance KPIs / KRAs</h2>
                             </div>
-                            <button className="btn btn-sm" style={{ background: 'var(--color-rose-gold)', color: '#fff', display: 'flex', alignItems: 'center', gap: '4px' }} onClick={() => setRatings([...ratings, { kra_name: '', achievements: '', employee_rating: 0 }])}>
-                                <span style={{ fontSize: '20px', lineHeight: '1' }}>+</span> Add KPI Area
-                            </button>
+                            {openSection === 'B' ? <ChevronUp size={24} color="#64748b" /> : <ChevronDown size={24} color="#64748b" />}
                         </div>
 
-                        <div className="kpi-list">
-                            {ratings.filter(r => r.kra_name !== undefined || !r.question_id).length === 0 && (
+                        {openSection === 'B' && (
+                            <div style={{ padding: '24px', borderTop: '1px solid #e2e8f0' }}>
+                                <div className="kpi-list">
+                            {ratings.filter(r => !r.question_id).length === 0 && (
                                 <div style={{ padding: '40px', textAlign: 'center', background: '#f8fafc', borderRadius: '8px', border: '1px dashed #cbd5e1', color: '#64748b' }}>
                                     No specific Performance KPIs configured for this appraisal yet. Click "Add KPI Area" to start.
                                 </div>
                             )}
-                            {ratings.filter(r => r.kra_name !== undefined || !r.question_id).map((r, idx) => (
+                            {ratings.filter(r => !r.question_id).map((r, idx) => (
                                 <div key={idx} style={{ padding: '24px', border: '1px solid #e2e8f0', borderRadius: '12px', marginBottom: '20px', background: '#fff', boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }}>
                                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px', alignItems: 'center' }}>
-                                        <h4 style={{ margin: 0, color: 'var(--color-rose-gold)', fontSize: '0.9rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                                        <h4 style={{ margin: 0, color: '#166534', fontSize: '0.9rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                                             KPI {String(idx + 1).padStart(2, '0')}
                                         </h4>
-                                        <button className="btn btn-secondary btn-sm" style={{ color: '#ef4444' }} 
-                                            onClick={() => {
-                                                const newList = [...ratings];
-                                                newList.splice(ratings.indexOf(r), 1);
-                                                setRatings(newList);
-                                            }}>
-                                            Remove
-                                        </button>
+                                        {canEditEmployee && (
+                                            <button className="btn btn-secondary btn-sm" style={{ color: '#ef4444' }} 
+                                                onClick={() => {
+                                                    const newList = [...ratings];
+                                                    newList.splice(ratings.indexOf(r), 1);
+                                                    setRatings(newList);
+                                                }}>
+                                                Remove
+                                            </button>
+                                        )}
                                     </div>
-                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr 1fr', gap: '24px' }}>
+                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr 1fr', columnGap: '24px', rowGap: '20px' }}>
+                                        {/* ROW 1: Employee Inputs */}
                                         <div>
-                                            <label className="field-label" style={{ fontWeight: 600, color: '#334155' }}>KRA / KPI Area</label>
+                                            <label className="field-label" style={{ fontWeight: 600, color: '#1e3a8a' }}>KRA / KPI Area</label>
                                             <input type="text" className="form-input" style={{ width: '100%', marginTop: '4px' }} placeholder="e.g. Sales Target" 
                                                 value={r.kra_name || ''} onChange={e => {
                                                     const newList = [...ratings];
-                                                    newList[ratings.indexOf(r)] = { ...r, kra_name: e.target.value };
-                                                    setRatings(newList);
-                                                }} />
+                                                    const actualIdx = ratings.indexOf(r);
+                                                    if (actualIdx > -1) {
+                                                        newList[actualIdx] = { ...newList[actualIdx], kra_name: e.target.value };
+                                                        setRatings(newList);
+                                                    }
+                                                }} disabled={!canEditEmployee} />
                                         </div>
                                         <div>
-                                            <label className="field-label" style={{ fontWeight: 600, color: '#334155' }}>Key Achievements</label>
-                                            <textarea className="form-input" rows="3" style={{ width: '100%', marginTop: '4px' }} placeholder="Summary of what was achieved..."
+                                            <label className="field-label" style={{ fontWeight: 600, color: '#1e3a8a' }}>Key Achievements</label>
+                                            <textarea className="form-input" rows="2" style={{ width: '100%', marginTop: '4px' }} placeholder="Summary of what was achieved..."
                                                 value={r.achievements || ''} onChange={e => {
                                                     const newList = [...ratings];
-                                                    newList[ratings.indexOf(r)] = { ...r, achievements: e.target.value };
-                                                    setRatings(newList);
-                                                }}></textarea>
+                                                    const actualIdx = ratings.indexOf(r);
+                                                    if (actualIdx > -1) {
+                                                        newList[actualIdx] = { ...newList[actualIdx], achievements: e.target.value };
+                                                        setRatings(newList);
+                                                    }
+                                                }} disabled={!canEditEmployee}></textarea>
                                         </div>
                                         <div>
-                                            <label className="field-label" style={{ fontWeight: 600, color: '#334155' }}>Self Rating (1-5)</label>
-                                            <select className="form-input" style={{ width: '100%', marginTop: '4px' }} value={r.employee_rating || 0} onChange={e => {
+                                            <label className="field-label" style={{ fontWeight: 600, color: '#1e3a8a' }}>Self Rating</label>
+                                            <select className="form-input" style={{ width: '100%', marginTop: '4px' }} value={Number(r.employee_rating) || 0} onChange={e => {
                                                     const newList = [...ratings];
-                                                    newList[ratings.indexOf(r)] = { ...r, employee_rating: parseInt(e.target.value) };
-                                                    setRatings(newList);
-                                                }}>
+                                                    const actualIdx = ratings.indexOf(r);
+                                                    if (actualIdx > -1) {
+                                                        newList[actualIdx] = { ...newList[actualIdx], employee_rating: parseInt(e.target.value) };
+                                                        setRatings(newList);
+                                                    }
+                                                }} disabled={!canEditEmployee}>
                                                 <option value="0">Select...</option>
                                                 {((template?.rating_mapping && template.rating_mapping.length > 0) ? template.rating_mapping : [
                                                     {rating: 5, label: 'Outstanding Performance'}, 
@@ -421,114 +485,276 @@ const AppraisalForm = () => {
                                                     </option>
                                                 ))}
                                             </select>
-                                            <div style={{ marginTop: '16px' }}>
-                                                <label className="field-label" style={{ fontWeight: 600, color: 'var(--color-rose-gold)' }}>Manager Rating (1-5)</label>
-                                                <select className="form-input" style={{ width: '100%', marginTop: '4px' }} value={r.manager_rating || 0} onChange={e => {
+                                        </div>
+
+                                        {/* ROW 2: Manager Inputs */}
+                                        <div></div> {/* Empty column under KRA */}
+                                        <div>
+                                            <label className="field-label" style={{ fontWeight: 600, color: '#166534' }}>Manager's Feedback</label>
+                                            <textarea className="form-input" rows="2" style={{ width: '100%', marginTop: '4px', borderColor: '#166534' }} placeholder="Manager's thoughts on this KPI..."
+                                                value={r.manager_comment || ''} onChange={e => {
                                                     const newList = [...ratings];
-                                                    newList[ratings.indexOf(r)] = { ...r, manager_rating: parseInt(e.target.value) };
+                                                    const actualIdx = ratings.indexOf(r);
+                                                    if (actualIdx > -1) {
+                                                        newList[actualIdx] = { ...newList[actualIdx], manager_comment: e.target.value };
+                                                        setRatings(newList);
+                                                    }
+                                                }} disabled={!canEditManager}></textarea>
+                                        </div>
+                                        <div>
+                                            <label className="field-label" style={{ fontWeight: 600, color: '#166534' }}>Manager Rating</label>
+                                            <select className="form-input" style={{ width: '100%', marginTop: '4px', borderColor: '#166534' }} value={Number(r.manager_rating) || 0} onChange={e => {
+                                                const newList = [...ratings];
+                                                const actualIdx = ratings.indexOf(r);
+                                                if (actualIdx > -1) {
+                                                    newList[actualIdx] = { ...newList[actualIdx], manager_rating: parseInt(e.target.value) };
                                                     setRatings(newList);
-                                                }}>
-                                                    <option value="0">Select...</option>
-                                                    {((template?.rating_mapping && template.rating_mapping.length > 0) ? template.rating_mapping : [
-                                                        {rating: 5, label: 'Outstanding Performance'}, 
-                                                        {rating: 4, label: 'Strong Performance'}, 
-                                                        {rating: 3, label: 'Effective Performance'}, 
-                                                        {rating: 2, label: 'Developing Performance'}, 
-                                                        {rating: 1, label: 'Performance Below Expectations'}
-                                                    ]).map(m => (
-                                                        <option key={m.rating} value={m.rating}>
-                                                            {m.rating} - {m.label}
-                                                        </option>
-                                                    ))}
-                                                </select>
-                                            </div>
+                                                }
+                                            }} disabled={!canEditManager}>
+                                                <option value="0">Select...</option>
+                                                {((template?.rating_mapping && template.rating_mapping.length > 0) ? template.rating_mapping : [
+                                                    {rating: 5, label: 'Outstanding Performance'}, 
+                                                    {rating: 4, label: 'Strong Performance'}, 
+                                                    {rating: 3, label: 'Effective Performance'}, 
+                                                    {rating: 2, label: 'Developing Performance'}, 
+                                                    {rating: 1, label: 'Performance Below Expectations'}
+                                                ]).map(m => (
+                                                    <option key={m.rating} value={m.rating}>
+                                                        {m.rating} - {m.label}
+                                                    </option>
+                                                ))}
+                                            </select>
                                         </div>
                                     </div>
                                 </div>
                             ))}
-                        </div>
+                            {canEditEmployee && (
+                                <div style={{ display: 'flex', justifyContent: 'center', marginTop: '24px' }}>
+                                    <button className="btn" style={{ background: 'var(--color-rose-gold)', color: '#fff', display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 24px', borderRadius: '8px', fontWeight: 'bold' }} onClick={() => setRatings([...ratings, { kra_name: '', achievements: '', employee_rating: 0 }])}>
+                                        <span style={{ fontSize: '20px', lineHeight: '1' }}>+</span> Add KPI Area
+                                    </button>
+                                </div>
+                            )}
+                                </div>
+                            </div>
+                        )}
                     </div>
 
                     {/* SECTION C & D: Summary */}
-                    <div style={{ marginBottom: '48px' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px', paddingBottom: '12px', borderBottom: '1px solid #e2e8f0' }}>
-                            <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'var(--color-rose-gold)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold' }}>C</div>
-                            <h2 style={{ margin: 0, fontSize: '1.25rem' }}>Development Plan & Summary</h2>
+                    <div style={{ marginBottom: '24px', border: '1px solid #e2e8f0', borderRadius: '8px', overflow: 'hidden', background: '#fff' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 24px', background: '#f8fafc', cursor: 'pointer' }} onClick={() => toggleSection('C')}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'var(--color-rose-gold)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold' }}>C</div>
+                                <h2 style={{ margin: 0, fontSize: '1.25rem', color: '#166534' }}>Employee Summary and Development Plan</h2>
+                            </div>
+                            {openSection === 'C' ? <ChevronUp size={24} color="#64748b" /> : <ChevronDown size={24} color="#64748b" />}
                         </div>
                         
-                        <div className="mb-4" style={{ marginBottom: '24px' }}>
-                            <p style={{ color: '#64748b', fontSize: '0.9rem', marginBottom: '12px' }}>Summarize results, challenges, and training needs.</p>
-                            <textarea
-                                className="form-input"
-                                rows="6"
-                                style={{ width: '100%', padding: '12px', border: '1px solid #e2e8f0', borderRadius: '6px' }}
-                                placeholder="Employee: Summary of results and development plan..."
-                                value={comments.find(c => c.section === 'C_SUMMARY')?.comment_text || ''}
-                                onChange={(e) => handleCommentChange('C_SUMMARY', e.target.value)}
-                            ></textarea>
-                        </div>
+                        {openSection === 'C' && (
+                            <div style={{ padding: '24px', borderTop: '1px solid #e2e8f0' }}>
+                                <table style={{ width: '100%', borderCollapse: 'collapse', border: '1px solid #1e293b', marginBottom: '32px' }}>
+                            <thead>
+                                <tr>
+                                    <th style={{ width: '40%', padding: '12px', border: '1px solid #1e293b', background: '#d1d5db', textAlign: 'center', fontWeight: 600, color: '#111827' }}>Item</th>
+                                    <th style={{ width: '60%', padding: '12px', border: '1px solid #1e293b', background: '#d1d5db', textAlign: 'center', fontWeight: 600, color: '#111827' }}>Description / Employee Input</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td style={{ padding: '12px', border: '1px solid #1e293b', verticalAlign: 'top' }}>
+                                        <strong style={{ color: '#111827' }}>Overall Performance Summary</strong> (Briefly summarize your performance and contribution during the year.)
+                                    </td>
+                                    <td style={{ padding: '0', border: '1px solid #1e293b' }}>
+                                        <textarea className="form-input" rows="4" style={{ width: '100%', height: '100%', border: 'none', resize: 'vertical', borderRadius: 0 }}
+                                            value={comments.find(c => c.section === 'C_SUMMARY_OVERALL')?.comment_text || comments.find(c => c.section === 'C_SUMMARY')?.comment_text || ''}
+                                            onChange={(e) => handleCommentChange('C_SUMMARY_OVERALL', e.target.value)}
+                                            disabled={!canEditEmployee}></textarea>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style={{ padding: '12px', border: '1px solid #1e293b', verticalAlign: 'top' }}>
+                                        <strong style={{ color: '#111827' }}>Challenges Faced</strong> (Mention key obstacles or situations that affected your performance and how you managed them.)
+                                    </td>
+                                    <td style={{ padding: '0', border: '1px solid #1e293b' }}>
+                                        <textarea className="form-input" rows="4" style={{ width: '100%', height: '100%', border: 'none', resize: 'vertical', borderRadius: 0 }}
+                                            value={comments.find(c => c.section === 'C_SUMMARY_CHALLENGES')?.comment_text || ''}
+                                            onChange={(e) => handleCommentChange('C_SUMMARY_CHALLENGES', e.target.value)}
+                                            disabled={!canEditEmployee}></textarea>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style={{ padding: '12px', border: '1px solid #1e293b', verticalAlign: 'top' }}>
+                                        <strong style={{ color: '#111827' }}>Areas of Improvement / Development</strong> (Identify skills or areas you wish to improve in the next review period.)
+                                    </td>
+                                    <td style={{ padding: '0', border: '1px solid #1e293b' }}>
+                                        <textarea className="form-input" rows="4" style={{ width: '100%', height: '100%', border: 'none', resize: 'vertical', borderRadius: 0 }}
+                                            value={comments.find(c => c.section === 'C_SUMMARY_IMPROVEMENT')?.comment_text || ''}
+                                            onChange={(e) => handleCommentChange('C_SUMMARY_IMPROVEMENT', e.target.value)}
+                                            disabled={!canEditEmployee}></textarea>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style={{ padding: '12px', border: '1px solid #1e293b', verticalAlign: 'top' }}>
+                                        <strong style={{ color: '#111827' }}>Training / Support Required</strong> (Specify if any training, mentoring, or support is needed from the organization to enhance your performance.)
+                                    </td>
+                                    <td style={{ padding: '0', border: '1px solid #1e293b' }}>
+                                        <textarea className="form-input" rows="4" style={{ width: '100%', height: '100%', border: 'none', resize: 'vertical', borderRadius: 0 }}
+                                            value={comments.find(c => c.section === 'C_SUMMARY_TRAINING')?.comment_text || ''}
+                                            onChange={(e) => handleCommentChange('C_SUMMARY_TRAINING', e.target.value)}
+                                            disabled={!canEditEmployee}></textarea>
+                                    </td>
+                                </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        )}
+                    </div>
 
-                        <div className="mb-4">
-                            <h3 style={{ fontSize: '1.1rem', marginBottom: '12px' }}>Section D: Manager's Recommendation (Confidential)</h3>
-                            <p style={{ color: '#64748b', fontSize: '0.9rem', marginBottom: '12px' }}>This section is hidden from the employee during the process.</p>
-                            <textarea
-                                className="form-input"
-                                rows="6"
-                                style={{ width: '100%', padding: '12px', border: '1px solid #e2e8f0', borderRadius: '6px' }}
-                                placeholder="Manager: Assessment of potential and recommendation..."
-                                value={comments.find(c => c.section === 'D_MANAGER')?.comment_text || ''}
-                                onChange={(e) => handleCommentChange('D_MANAGER', e.target.value)}
-                            ></textarea>
+                    {/* SECTION D: Manager Assessment */}
+                    <div style={{ marginBottom: '24px', border: '1px solid #e2e8f0', borderRadius: '8px', overflow: 'hidden', background: '#fff' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 24px', background: '#f8fafc', cursor: 'pointer' }} onClick={() => toggleSection('D')}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'var(--color-rose-gold)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold' }}>D</div>
+                                <h2 style={{ margin: 0, fontSize: '1.25rem', color: '#166534' }}>Manager Assessment – Overall Performance Evaluation</h2>
+                            </div>
+                            {openSection === 'D' ? <ChevronUp size={24} color="#64748b" /> : <ChevronDown size={24} color="#64748b" />}
                         </div>
+                        
+                        {openSection === 'D' && (
+                            <div style={{ padding: '24px', borderTop: '1px solid #e2e8f0' }}>
+                                <p style={{ color: '#64748b', fontSize: '0.9rem', marginBottom: '12px' }}>This section is hidden from the employee during the process.</p>
+                                
+                                <table style={{ width: '100%', borderCollapse: 'collapse', border: '1px solid #1e293b', marginBottom: '32px' }}>
+                                <thead>
+                                    <tr>
+                                        <th style={{ width: '40%', padding: '12px', border: '1px solid #1e293b', background: '#d1d5db', textAlign: 'left', fontWeight: 600, color: '#111827' }}>Evaluation Area</th>
+                                        <th style={{ width: '60%', padding: '12px', border: '1px solid #1e293b', background: '#d1d5db', textAlign: 'left', fontWeight: 600, color: '#111827' }}>Manager Comments / Summary and Rating</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td style={{ padding: '12px', border: '1px solid #1e293b', verticalAlign: 'top' }}>
+                                            <strong style={{ color: '#111827' }}>Overall Achievement of KPIs</strong> (Summarize the employee's performance across all KPIs (e.g., met expectations, exceeded in certain areas, or needs improvement).)
+                                        </td>
+                                        <td style={{ padding: '0', border: '1px solid #1e293b' }}>
+                                            <textarea className="form-input" rows="4" style={{ width: '100%', height: '100%', border: 'none', resize: 'vertical', borderRadius: 0 }}
+                                                value={comments.find(c => c.section === 'D_MANAGER_ACHIEVEMENT')?.comment_text || ''}
+                                                onChange={(e) => handleCommentChange('D_MANAGER_ACHIEVEMENT', e.target.value)}
+                                                disabled={!canEditManager}></textarea>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td style={{ padding: '12px', border: '1px solid #1e293b', verticalAlign: 'top' }}>
+                                            <strong style={{ color: '#111827' }}>Manager's Final Overall Rating</strong> (Provide your overall performance rating for the employee)
+                                        </td>
+                                        <td style={{ padding: '0', border: '1px solid #1e293b', verticalAlign: 'top' }}>
+                                            <select className="form-input" style={{ width: '100%', height: '100%', border: 'none', borderRadius: 0, padding: '12px' }}
+                                                value={comments.find(c => c.section === 'D_MANAGER_RATING')?.comment_text || ''}
+                                                onChange={(e) => handleCommentChange('D_MANAGER_RATING', e.target.value)}
+                                                disabled={!canEditManager}
+                                            >
+                                                <option value="" disabled>Select Rating...</option>
+                                                <option value="5">5 - Outstanding Performance</option>
+                                                <option value="4">4 - Strong Performance</option>
+                                                <option value="3">3 - Effective Performance</option>
+                                                <option value="2">2 - Developing Performance</option>
+                                                <option value="1">1 - Performance Below Expectations</option>
+                                            </select>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td style={{ padding: '12px', border: '1px solid #1e293b', verticalAlign: 'top' }}>
+                                            <strong style={{ color: '#111827' }}>Manager's Recommendation</strong> (Indicate if the employee is ready for higher responsibility, needs development, or is a consistent performer.)
+                                        </td>
+                                        <td style={{ padding: '0', border: '1px solid #1e293b' }}>
+                                            <textarea className="form-input" rows="4" style={{ width: '100%', height: '100%', border: 'none', resize: 'vertical', borderRadius: 0 }}
+                                                value={comments.find(c => c.section === 'D_MANAGER_RECOMMENDATION')?.comment_text || comments.find(c => c.section === 'D_MANAGER')?.comment_text || ''}
+                                                onChange={(e) => handleCommentChange('D_MANAGER_RECOMMENDATION', e.target.value)}
+                                                disabled={!canEditManager}></textarea>
+                                        </td>
+                                    </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        )}
                     </div>
 
                     {/* SECTION E: HR Audit */}
-                    <div style={{ background: '#f8fafc', padding: '32px', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px', paddingBottom: '12px', borderBottom: '1px solid #e2e8f0' }}>
-                            <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'var(--color-charcoal)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold' }}>E</div>
-                            <h2 style={{ margin: 0, fontSize: '1.25rem' }}>HR Review & Finalization</h2>
+                    <div style={{ marginBottom: '24px', border: '1px solid #e2e8f0', borderRadius: '8px', overflow: 'hidden', background: '#fff' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 24px', background: '#f8fafc', cursor: 'pointer' }} onClick={() => toggleSection('E')}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'var(--color-rose-gold)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold' }}>E</div>
+                                <h2 style={{ margin: 0, fontSize: '1.25rem', color: '#166534' }}>HR Review & Finalization</h2>
+                            </div>
+                            {openSection === 'E' ? <ChevronUp size={24} color="#64748b" /> : <ChevronDown size={24} color="#64748b" />}
                         </div>
                         
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '32px' }}>
-                            <div>
-                                <label className="checkbox-label" style={{ display: 'flex', alignItems: 'center', gap: '12px', fontSize: '1rem', cursor: 'pointer', padding: '12px', background: '#fff', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
-                                    <input type="checkbox" checked={appraisal.eligible_for_increment} 
-                                        onChange={e => setAppraisal({...appraisal, eligible_for_increment: e.target.checked})}
-                                        style={{ width: '20px', height: '20px' }} />
-                                    <span>Eligible for Salary Increment</span>
-                                </label>
-                            </div>
-                            <div>
-                                <label className="checkbox-label" style={{ display: 'flex', alignItems: 'center', gap: '12px', fontSize: '1rem', cursor: 'pointer', padding: '12px', background: '#fff', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
-                                    <input type="checkbox" checked={appraisal.eligible_for_bonus} 
-                                        onChange={e => setAppraisal({...appraisal, eligible_for_bonus: e.target.checked})}
-                                        style={{ width: '20px', height: '20px' }} />
-                                    <span>Eligible for Performance Bonus</span>
-                                </label>
-                            </div>
-                        </div>
-                        <div style={{ marginTop: '24px' }}>
-                            <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600 }}>Final HR Adjusted Rating (1-5 Stars)</label>
-                            <select className="form-input" style={{ width: '100%', maxWidth: '600px', fontSize: '1.05rem', padding: '12px' }} 
-                                value={appraisal.final_rating || 0} 
-                                onChange={e => setAppraisal({...appraisal, final_rating: parseFloat(e.target.value)})}
-                                disabled={!canEditHR}
-                            >
-                                <option value="0" disabled>Select Final Rating...</option>
-                                <option value="5">5 - Outstanding Performance (Consistently surpasses objectives & demonstrates exceptional initiative)</option>
-                                <option value="4">4 - Strong Performance (Frequently exceeds expectations & delivers results above standard)</option>
-                                <option value="3">3 - Effective Performance (Reliably meets job expectations & delivers quality results)</option>
-                                <option value="2">2 - Developing Performance (Partially meets expectations; improvement required in key areas)</option>
-                                <option value="1">1 - Performance Below Expectations (Does not consistently meet position requirements)</option>
-                            </select>
-                        </div>
+                        {openSection === 'E' && (
+                            <div style={{ padding: '24px', borderTop: '1px solid #e2e8f0' }}>
+                                <table style={{ width: '100%', borderCollapse: 'collapse', border: '1px solid #1e293b', marginBottom: '24px', background: '#fff' }}>
+                            <thead>
+                                <tr>
+                                    <th style={{ width: '40%', padding: '12px', border: '1px solid #1e293b', background: '#d1d5db', textAlign: 'left', fontWeight: 600, color: '#111827' }}>Review Area</th>
+                                    <th style={{ width: '60%', padding: '12px', border: '1px solid #1e293b', background: '#d1d5db', textAlign: 'left', fontWeight: 600, color: '#111827' }}>HR Action / Input</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td style={{ padding: '12px', border: '1px solid #1e293b', verticalAlign: 'middle' }}>
+                                        <strong style={{ color: '#111827' }}>Increment Eligibility</strong>
+                                    </td>
+                                    <td style={{ padding: '12px', border: '1px solid #1e293b' }}>
+                                        <label className="checkbox-label" style={{ display: 'flex', alignItems: 'center', gap: '12px', fontSize: '1rem', cursor: 'pointer', margin: 0 }}>
+                                            <input type="checkbox" checked={appraisal.eligible_for_increment} 
+                                                onChange={e => setAppraisal({...appraisal, eligible_for_increment: e.target.checked})}
+                                                style={{ width: '20px', height: '20px' }} disabled={!canEditHR} />
+                                            <span>Eligible for Salary Increment</span>
+                                        </label>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style={{ padding: '12px', border: '1px solid #1e293b', verticalAlign: 'middle' }}>
+                                        <strong style={{ color: '#111827' }}>Bonus Eligibility</strong>
+                                    </td>
+                                    <td style={{ padding: '12px', border: '1px solid #1e293b' }}>
+                                        <label className="checkbox-label" style={{ display: 'flex', alignItems: 'center', gap: '12px', fontSize: '1rem', cursor: 'pointer', margin: 0 }}>
+                                            <input type="checkbox" checked={appraisal.eligible_for_bonus} 
+                                                onChange={e => setAppraisal({...appraisal, eligible_for_bonus: e.target.checked})}
+                                                style={{ width: '20px', height: '20px' }} disabled={!canEditHR} />
+                                            <span>Eligible for Performance Bonus</span>
+                                        </label>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style={{ padding: '12px', border: '1px solid #1e293b', verticalAlign: 'top' }}>
+                                        <strong style={{ color: '#111827' }}>Final HR Adjusted Rating</strong>
+                                    </td>
+                                    <td style={{ padding: '0', border: '1px solid #1e293b', verticalAlign: 'top' }}>
+                                        <select className="form-input" style={{ width: '100%', height: '100%', border: 'none', borderRadius: 0, padding: '12px' }} 
+                                            value={appraisal.final_rating || 0} 
+                                            onChange={e => setAppraisal({...appraisal, final_rating: parseFloat(e.target.value)})}
+                                            disabled={!canEditHR}
+                                        >
+                                            <option value="0" disabled>Select Final Rating...</option>
+                                            <option value="5">5 - Outstanding Performance</option>
+                                            <option value="4">4 - Strong Performance</option>
+                                            <option value="3">3 - Effective Performance</option>
+                                            <option value="2">2 - Developing Performance</option>
+                                            <option value="1">1 - Performance Below Expectations</option>
+                                        </select>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
 
                         <div style={{ marginTop: '32px', padding: '20px', background: '#ecfdf5', border: '1px solid var(--color-charcoal)', borderRadius: '12px', color: '#065f46', display: 'flex', gap: '12px' }}>
                             <AlertCircle size={24} style={{ flexShrink: 0 }} />
                             <div>
                                 <strong>Finalization Note:</strong> Once finalized, this data will be synced with the Payroll module to update the salary structure for the next month.
                             </div>
+                            </div>
                         </div>
+                        )}
                     </div>
                 </div>
             </div>

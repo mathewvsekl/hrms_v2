@@ -5,11 +5,14 @@ import useAuthStore from '../../store/useAuthStore';
 import useNotificationStore from '../../store/useNotificationStore';
 import { useParams } from 'react-router-dom';
 import html2pdf from 'html2pdf.js';
+import { ROLE_IDS } from '../../utils/roleConstants';
 
 const AppraisalLetterView = ({ appraisalId: propAppraisalId, onAcknowledged }) => {
     const { id: urlAppraisalId } = useParams();
     const appraisalId = propAppraisalId || urlAppraisalId;
     const user = useAuthStore(state => state.user) || {};
+    const isSuperAdmin = user?.role_id === ROLE_IDS.SUPER_ADMIN || user?.role_id === ROLE_IDS.ADMIN;
+    const isHR = isSuperAdmin || useAuthStore.getState().hasPermission('appraisals', 'edit');
     const showAlert = useNotificationStore(state => state.showAlert);
 
     const [letter, setLetter] = useState(null);
@@ -94,7 +97,7 @@ const AppraisalLetterView = ({ appraisalId: propAppraisalId, onAcknowledged }) =
         );
     }
 
-    if (letter.status === 'Draft' && !user.role?.includes('HR')) {
+    if (letter.status === 'Draft' && !isHR) {
         return (
             <div style={{ background: '#fefce8', borderLeft: '4px solid #eab308', padding: '16px', display: 'flex', alignItems: 'flex-start', borderRadius: '4px' }}>
                 <AlertCircle style={{ color: '#eab308', marginRight: '12px', marginTop: '2px' }} size={20} />
@@ -131,7 +134,7 @@ const AppraisalLetterView = ({ appraisalId: propAppraisalId, onAcknowledged }) =
                     </div>
                     
                     <div style={{ display: 'flex', gap: '12px' }}>
-                        {letter.status === 'Draft' && user.role?.includes('HR') && (
+                        {letter.status === 'Draft' && isHR && (
                             <button 
                                 className="btn btn-primary"
                                 style={{ display: 'flex', alignItems: 'center', gap: '8px', opacity: submitting ? 0.7 : 1 }}
@@ -152,7 +155,7 @@ const AppraisalLetterView = ({ appraisalId: propAppraisalId, onAcknowledged }) =
                             View / Download PDF
                         </button>
 
-                        {letter.status === 'Published' && !user.role?.includes('HR') && (
+                        {letter.status === 'Published' && !isHR && (
                             <button 
                                 className="btn btn-primary"
                                 style={{ display: 'flex', alignItems: 'center', gap: '8px', opacity: submitting ? 0.7 : 1 }}

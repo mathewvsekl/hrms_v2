@@ -4,6 +4,7 @@ import api from '../services/api';
 import useAuthStore from '../store/useAuthStore';
 import useLayoutStore from '../store/useLayoutStore';
 import DateInput from '../components/ui/DateInput';
+import { ROLE_IDS } from '../utils/roleConstants';
 
 const renderFlag = (country) => {
     if (!country) return <span>🌐</span>;
@@ -59,9 +60,10 @@ const Assets = () => {
     const [editForm, setEditForm] = useState({});
     
     const { user } = useAuthStore();
-    const normalizedRole = user?.role || '';
-    const isAdmin = normalizedRole && normalizedRole !== 'EMPLOYEE';
-    const isGlobalAdmin = normalizedRole && normalizedRole !== 'EMPLOYEE';
+    const isSuperAdmin = user?.role_id === ROLE_IDS.SUPER_ADMIN || user?.role_id === ROLE_IDS.ADMIN;
+    const isAdmin = isSuperAdmin || useAuthStore.getState().hasPermission('assets', 'view');
+    const isGlobalAdmin = isAdmin;
+    const canCreate = isSuperAdmin || useAuthStore.getState().hasPermission('assets', 'create');
     const { setPageTitle, setPageSubtitle, setBackPath, resetPageHeader } = useLayoutStore();
 
     useEffect(() => {
@@ -286,7 +288,7 @@ const Assets = () => {
 
     return (
         <div className="page-assets">
-            {isAdmin && (
+            {canCreate && (
                 <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '24px' }}>
                     <button className="btn btn-primary" onClick={() => setShowAddModal(true)}>
                         <Plus size={18} /> Add Asset

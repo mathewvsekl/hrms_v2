@@ -47,10 +47,23 @@ const ProtectedRoute = ({ children }) => {
 
 import AlertDialog from './components/ui/AlertDialog';
 
+import { isAdmin as checkIsAdmin, isSessionExempt } from './utils/roleConstants';
+
 function App() {
   const user = useAuthStore(state => state.user);
-  const normalizedRole = user?.role || '';
-  const isAdmin = normalizedRole && normalizedRole !== 'EMPLOYEE';
+  const userRoleId = user?.role_id ?? 0;
+  
+  const hasAdminAccess = [
+      ['admin portal', 'view'],
+      ['configuration', 'view'],
+      ['employees', 'view'],
+      ['offboarding', 'view'],
+      ['reports', 'view'],
+      ['assets', 'view'],
+      ['payroll', 'edit']
+  ].some(([mod, act]) => useAuthStore.getState().hasPermission(mod, act));
+
+  const isAdmin = checkIsAdmin(userRoleId) || hasAdminAccess;
 
   const isAuthenticated = useAuthStore(state => state.isAuthenticated);
   const syncUser = useAuthStore(state => state.syncUser);
@@ -67,8 +80,7 @@ function App() {
   useEffect(() => {
     let timeoutId;
 
-    const roleUpper = (normalizedRole || '').toUpperCase().trim();
-    const isExemptAdmin = ['SUPERADMIN', 'ADMIN'].includes(roleUpper);
+    const isExemptAdmin = isSessionExempt(userRoleId);
 
     const resetTimer = () => {
       if (timeoutId) clearTimeout(timeoutId);

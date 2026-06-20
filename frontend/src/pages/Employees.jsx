@@ -5,6 +5,7 @@ import api from '../services/api';
 import useAuthStore from '../store/useAuthStore';
 import useLayoutStore from '../store/useLayoutStore';
 import { getSecureMediaUrl } from '../utils/mediaHelper';
+import { ROLE_IDS } from '../utils/roleConstants';
 
 const renderFlag = (country) => {
     if (!country) return <span>🌐</span>;
@@ -52,11 +53,11 @@ const Employees = () => {
     const [loading, setLoading] = useState(true);
     const navigate = useNavigate();
     const { user } = useAuthStore();
-    const normalizedRole = user?.role || '';
-    const isGlobalAdmin = normalizedRole && normalizedRole !== 'EMPLOYEE';
+    const isSuperAdmin = user?.role_id === ROLE_IDS.SUPER_ADMIN || user?.role_id === ROLE_IDS.ADMIN;
+    const isGlobalAdmin = isSuperAdmin || useAuthStore.getState().hasPermission('employees', 'view');
     const isEmployeeView = localStorage.getItem('adminViewMode') === 'employee';
     const isAdmin = isGlobalAdmin && !isEmployeeView;
-    const canCreate = useAuthStore.getState().hasPermission('employees', 'create');
+    const canCreate = isSuperAdmin || useAuthStore.getState().hasPermission('employees', 'create');
     const { setPageTitle, setPageSubtitle, resetPageHeader } = useLayoutStore();
 
     useEffect(() => {

@@ -3,11 +3,11 @@ import { X, Users, Save } from 'lucide-react';
 import api from '../services/api';
 import DateInput from './ui/DateInput';
 import useAuthStore from '../store/authStore';
+import { ROLE_IDS } from '../utils/roleConstants';
 
 const AttendanceBulkModal = ({ isOpen, onClose, onSave, employees }) => {
     const user = useAuthStore(state => state.user);
-    const userRole = user?.role;
-    const isSuperAdmin = user?.role === 'Super Admin';
+    const isSuperAdmin = user?.role_id === ROLE_IDS.SUPER_ADMIN || user?.role_id === ROLE_IDS.ADMIN;
     const [formData, setFormData] = useState({
         employee_ids: [],
         attendance_date: new Date().toISOString().split('T')[0],

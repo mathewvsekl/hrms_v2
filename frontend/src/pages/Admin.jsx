@@ -9,6 +9,7 @@ import COUNTRY_DATA from '../data/countryData';
 import DateInput from '../components/ui/DateInput';
 import useNotificationStore from '../store/useNotificationStore';
 import useAuthStore from '../store/useAuthStore';
+import { ROLE_IDS } from '../utils/roleConstants';
 
 /* ── Tab definitions ────────────────────────────────────── */
 const TABS = [
@@ -19,7 +20,7 @@ const TABS = [
 ];
 
 /* ── RBAC Panel ─────────────────────────────────────────── */
-const MODULES = ['Dashboard', 'Directory', 'Employees', 'Documents', 'Attendance', 'Leave', 'Payroll', 'Appraisals', 'Offboarding', 'Assets', 'Reports', 'Configuration'];
+const MODULES = ['Dashboard', 'Directory', 'Employees', 'Documents', 'Attendance', 'Leave', 'Payroll', 'Appraisals', 'Offboarding', 'Assets', 'Reports', 'Configuration', 'Admin Portal'];
 const ACTIONS = ['view', 'create', 'edit', 'delete', 'approve'];
 const ROLES = [
     { value: 'Super Admin', label: 'Super Admin' },
@@ -388,6 +389,12 @@ const CurrencyConfiguration = () => {
         }
     };
 
+    const isSuperAdmin = useAuthStore.getState().user?.role_id === ROLE_IDS.SUPER_ADMIN;
+    const isAdmin = useAuthStore.getState().user?.role_id === ROLE_IDS.ADMIN;
+    const hasConfigCreate = isSuperAdmin || isAdmin || useAuthStore.getState().hasPermission('configuration', 'create');
+    const hasConfigEdit = isSuperAdmin || isAdmin || useAuthStore.getState().hasPermission('configuration', 'edit');
+    const hasConfigDelete = isSuperAdmin || isAdmin || useAuthStore.getState().hasPermission('configuration', 'delete');
+
     return (
         <div style={{ marginTop: '32px' }}>
             <h4 style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px', fontSize: '15px', color: 'var(--text-main)' }}>
@@ -419,14 +426,18 @@ const CurrencyConfiguration = () => {
                     <DateInput
                         value={form.effective_date} onChange={val => setForm({ ...form, effective_date: val })} />
                 </div>
-                <button className="btn btn-primary" style={{ height: '40px', padding: '0 16px' }} onClick={addRate}><Plus size={16} /> Add Rate</button>
+                {hasConfigCreate && (
+                    <button className="btn btn-primary" style={{ height: '40px', padding: '0 16px' }} onClick={addRate}><Plus size={16} /> Add Rate</button>
+                )}
             </div>
 
             {loading ? <div style={{ textAlign: 'center', padding: '20px' }}><Loader size={20} className="spin" /> Loading rates...</div> : (
                 <div style={{ overflowX: 'auto' }}>
                     <table className="data-table">
                         <thead>
-                            <tr><th>Pair</th><th>Rate</th><th>Effective From</th><th>Status</th><th style={{ textAlign: 'center' }}>Actions</th></tr>
+                            <tr><th>Pair</th><th>Rate</th><th>Effective From</th><th>Status</th>
+                            {(hasConfigEdit || hasConfigDelete) && <th style={{ textAlign: 'center' }}>Actions</th>}
+                            </tr>
                         </thead>
                         <tbody>
                             {rates.length === 0 ? (
@@ -466,6 +477,7 @@ const CurrencyConfiguration = () => {
                                             {r.is_active ? 'Active' : 'Archived'}
                                         </span>
                                     </td>
+                                    {(hasConfigEdit || hasConfigDelete) && (
                                     <td>
                                         <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
                                             {isEditing ? (
@@ -475,12 +487,13 @@ const CurrencyConfiguration = () => {
                                                 </>
                                             ) : (
                                                 <>
-                                                    <button onClick={() => setEditingRate({...r})} style={{ background: 'none', border: 'none', color: '#2563eb', cursor: 'pointer', fontSize: '13px' }}>Edit</button>
-                                                    <button onClick={() => deleteRate(r.id)} style={{ background: 'none', border: 'none', color: '#dc2626', cursor: 'pointer', fontSize: '13px' }}>Delete</button>
+                                                    {hasConfigEdit && <button onClick={() => setEditingRate({...r})} style={{ background: 'none', border: 'none', color: '#2563eb', cursor: 'pointer', fontSize: '13px' }}>Edit</button>}
+                                                    {hasConfigDelete && <button onClick={() => deleteRate(r.id)} style={{ background: 'none', border: 'none', color: '#dc2626', cursor: 'pointer', fontSize: '13px' }}>Delete</button>}
                                                 </>
                                             )}
                                         </div>
                                     </td>
+                                    )}
                                 </tr>
                             )})}
                         </tbody>
@@ -502,6 +515,12 @@ const OrgPanel = () => {
     const [activeForm, setActiveForm] = useState(null);
     const [openSection, setOpenSection] = useState(null);
     const { showAlert, showConfirm } = useNotificationStore();
+    
+    const isSuperAdmin = useAuthStore.getState().user?.role_id === ROLE_IDS.SUPER_ADMIN;
+    const isAdmin = useAuthStore.getState().user?.role_id === ROLE_IDS.ADMIN;
+    const hasConfigCreate = isSuperAdmin || isAdmin || useAuthStore.getState().hasPermission('configuration', 'create');
+    const hasConfigEdit = isSuperAdmin || isAdmin || useAuthStore.getState().hasPermission('configuration', 'edit');
+    const hasConfigDelete = isSuperAdmin || isAdmin || useAuthStore.getState().hasPermission('configuration', 'delete');
 
     const fetchAll = async () => {
         setLoading(true);
@@ -706,7 +725,7 @@ const OrgPanel = () => {
                                 <p style={{ color: 'var(--text-secondary)', fontSize: '13px', marginTop: '4px' }}>{s.data.length} records</p>
                             </div>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                                {s.Form && isOpen && (
+                                {s.Form && isOpen && hasConfigCreate && (
                                     <button className="btn btn-primary" style={{ padding: '8px 16px', fontSize: '14px', borderRadius: '6px', display: 'flex', alignItems: 'center', gap: '6px', fontWeight: '500' }}
                                         onClick={(e) => { e.stopPropagation(); setActiveForm(activeForm === s.key ? null : s.key); }}>
                                         <Plus size={16} /> Add {s.singular}
@@ -726,7 +745,9 @@ const OrgPanel = () => {
                                             <thead>
                                                 <tr>
                                                     {s.headers.map(h => <th key={h}>{h}</th>)}
-                                                    <th style={{ width: '120px', textAlign: 'center', position: 'sticky', right: 0, background: '#f9fafb', zIndex: 10, boxShadow: '-5px 0 10px -5px rgba(0,0,0,0.05)' }}>Actions</th>
+                                                    {(hasConfigEdit || hasConfigDelete) && (
+                                                        <th style={{ width: '120px', textAlign: 'center', position: 'sticky', right: 0, background: '#f9fafb', zIndex: 10, boxShadow: '-5px 0 10px -5px rgba(0,0,0,0.05)' }}>Actions</th>
+                                                    )}
                                                 </tr>
                                             </thead>
                                             <tbody>
@@ -1174,15 +1195,21 @@ const GlobalPanel = () => {
 const Admin = () => {
     const navigate = useNavigate();
     const { user } = useAuthStore();
-    const normalizedRole = user?.role || '';
     
-    const isSuperAdmin = user?.role === 'Super Admin';
+    const isSuperAdmin = user?.role_id === ROLE_IDS.SUPER_ADMIN;
+    const isAdmin = user?.role_id === ROLE_IDS.ADMIN;
     const hasConfigView = useAuthStore.getState().hasPermission('configuration', 'view');
     const hasConfigEdit = useAuthStore.getState().hasPermission('configuration', 'edit');
+    const hasDocumentsView = useAuthStore.getState().hasPermission('documents', 'view');
+    const hasAdminPortal = useAuthStore.getState().hasPermission('admin portal', 'view');
 
     const filteredTabs = TABS.filter(tab => {
-        if (tab.id === 'rbac') return isSuperAdmin || hasConfigEdit;
-        return hasConfigView;
+        if (tab.id === 'rbac') return isSuperAdmin || isAdmin || hasConfigEdit;
+        if (tab.id === 'documents') return isSuperAdmin || isAdmin || hasDocumentsView;
+        if (tab.id === 'global') return isSuperAdmin || isAdmin || hasConfigView;
+        // Organization tab can be viewed if they have admin portal access, or config access
+        if (tab.id === 'org') return isSuperAdmin || isAdmin || hasConfigView || hasAdminPortal;
+        return false;
     });
 
     const isEmployeeView = localStorage.getItem('adminViewMode') === 'employee';

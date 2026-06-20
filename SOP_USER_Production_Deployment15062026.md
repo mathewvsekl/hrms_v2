@@ -30,7 +30,7 @@ Before running the deployment script, you must explicitly verify the version and
 
 ### 3. Verify Database Patch Location
 - If there are database changes, they MUST be placed in: 
-  `database/migrations/patches/patch_v[VERSION].sql` (e.g., `patch_v3.0.29-hrms.sql`)
+  `C:\Users\AneeshMathew\HRMS V2\releasepatch_v[VERSION].sql` (e.g., `patch_v3.0.29-hrms.sql`)
 - The automation script strictly looks for this filename pattern.
 
 ### 4. Versioning & Repair Build Rules (CRITICAL)

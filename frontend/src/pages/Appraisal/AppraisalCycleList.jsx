@@ -5,6 +5,7 @@ import api from '../../services/api';
 import useAuthStore from '../../store/useAuthStore';
 import useLayoutStore from '../../store/useLayoutStore';
 import DateInput from '../../components/ui/DateInput';
+import { ROLE_IDS } from '../../utils/roleConstants';
 
 const AppraisalCycleList = () => {
     const [appraisals, setAppraisals] = useState([]);
@@ -75,8 +76,8 @@ const AppraisalCycleList = () => {
         }
     };
 
-    const normalizedRole = user?.role || '';
-    const isAdmin = normalizedRole && normalizedRole !== 'EMPLOYEE';
+    const isSuperAdmin = user?.role_id === ROLE_IDS.SUPER_ADMIN || user?.role_id === ROLE_IDS.ADMIN;
+    const isAdmin = isSuperAdmin || useAuthStore.getState().hasPermission('appraisals', 'create') || useAuthStore.getState().hasPermission('appraisals', 'edit');
     
     // Derived collections
     const selfAppraisals = appraisals.filter(a => a.employee_id === user?.employee_id);
@@ -190,10 +191,10 @@ const AppraisalCycleList = () => {
                                     displayAppraisals().map((item) => (
                                         <tr key={item.id} style={{ cursor: 'pointer' }} onClick={() => navigate(`/appraisals/${item.id}`)}>
                                             <td>
-                                                <div style={{ fontWeight: 500 }}>Emp ID: {item.employee_id}</div>
-                                                <div style={{ color: 'var(--color-text-muted)', fontSize: '0.85rem' }}>Cycle ID: {item.cycle_id}</div>
+                                                <div style={{ fontWeight: 500 }}>{item.first_name} {item.last_name}</div>
+                                                <div style={{ color: 'var(--color-text-muted)', fontSize: '0.85rem' }}>Emp ID: {item.emp_code || item.employee_id} | Cycle ID: {item.cycle_id}</div>
                                             </td>
-                                            <td>Annual Appraisal 2025</td>
+                                            <td>{item.cycle_name || 'Appraisal Cycle'}</td>
                                             <td>
                                                 <span style={{
                                                     display: 'inline-flex',

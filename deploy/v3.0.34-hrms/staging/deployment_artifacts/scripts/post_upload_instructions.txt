@@ -1,0 +1,20 @@
+# HRMS v3.0.34-hrms Post-Upload Instructions (DirectAdmin)
+
+1. UPLOAD
+   - Upload 'HRMS_V2_v3.0.34-hrms_FULL.zip' directly to your domain root: /domains/hrms.anedins.com/
+
+2. EXTRACT
+   - Extract the ZIP. This will perfectly merge without overwriting your uploads or configs:
+     - public_html/         (Main web source: app, vendor, frontend assets)
+     - private/             (Internal codebase: config, public, storage, tmp)
+     - deployment_artifacts/ (Database patches, scripts, versions)
+
+3. INITIALIZE DATABASE
+   - Via phpMyAdmin, import 'deployment_artifacts/database/patch_v3.0.34-hrms.sql'.
+
+4. SETUP config/config.php
+   - Check 'private/config/'. If it is a new installation, rename 'config.template.php' to 'config.php' and update credentials.
+   - (If upgrading, your existing config.php is already safe).
+
+5. VERIFY
+   - Access your domain to log in.

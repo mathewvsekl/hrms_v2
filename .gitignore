@@ -8,3 +8,11 @@ tmp/
 backups/
 deployments/
 scratch/
+db_data/
+
+# Temporary test/debug files
+backend/public/test*.php
+backend/public/test.php
+backend/public/dump_debug.php
+backend/public/fix_db_roles.php
+backend/storage/cache/*.cache

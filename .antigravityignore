@@ -1,0 +1,82 @@
+# Antigravity IDE Ignore File
+# Excludes unnecessary files and directories from indexing, searching, and agent context to reduce token usage.
+
+# ==========================================
+# 1. Third-Party Packages & Libraries
+# ==========================================
+node_modules/
+vendor/
+
+# ==========================================
+# 2. Build, Cache, and IDE Files
+# ==========================================
+.git/
+.vscode/
+__pycache__/
+.DS_Store
+Thumbs.db
+.npm/
+.cache/
+
+# ==========================================
+# 3. Large Database Dumps & SQL Backups
+# ==========================================
+*.sql
+*.sqlite
+*.db
+
+# ==========================================
+# 4. Archives & Compressed Deliverables
+# ==========================================
+*.zip
+*.tar.gz
+*.tgz
+*.rar
+*.7z
+*.gz
+
+# ==========================================
+# 5. Diffs, Logs, and Raw CLI Outputs
+# ==========================================
+*.log
+*.txt
+*.pdf
+*.csv
+
+# ==========================================
+# 6. Temporary / Staging / Backup Folders
+# ==========================================
+tmp/
+backups/
+deployments/
+zip_staging/
+production_upload/
+scratch/
+db_data/
+New folder/
+v2.6.5/
+
+# ==========================================
+# 7. Temporary / Diagnostic Root Scripts
+# ==========================================
+# Exclude root-level test/utility scripts so they don't bloat grep/workspace searches
+/test*.php
+/test*.js
+/test*.py
+/tmp_*.php
+/audit_db*.php
+/check_db*.php
+/debug_*.php
+/fix_*.py
+/fix_*.js
+/refactor_*.py
+/update_*.py
+/update_*.js
+/query_*.js
+/fetch_*.js
+/replace.js
+/run_fix.js
+/local_db_patch.php
+/database_role_normalization.php
+/upgrade_roles_table.php
+/dump_schema.php

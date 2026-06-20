@@ -8,6 +8,7 @@ import DateInput from '../components/ui/DateInput';
 import PhoneInput from '../components/ui/PhoneInput';
 import { formatDate, formatDateTime } from '../utils/dateUtils';
 import useNotificationStore from '../store/useNotificationStore';
+import { ROLE_IDS } from '../utils/roleConstants';
 
 const Onboarding = () => {
     const [view, setView] = useState('list');
@@ -707,7 +708,7 @@ const Onboarding = () => {
                                         {loading ? <Loader size={16} className="spin" /> : <CheckCircle size={16} />}
                                         Submit for Approval
                                     </button>
-                                    {formData.id && formData.status === 'pending_approval' && (user?.role !== 'Employee') && (
+                                    {formData.id && formData.status === 'pending_approval' && (user?.role_id === ROLE_IDS.SUPER_ADMIN || user?.role_id === ROLE_IDS.ADMIN || useAuthStore.getState().hasPermission('employees', 'edit')) && (
                                         <button className="btn btn-primary" style={{ display: 'flex', alignItems: 'center', gap: '8px', background: '#3730a3', color: '#fff' }} onClick={(e) => { e.preventDefault(); handleApprove(e, formData.id); }} disabled={loading}>
                                             {loading ? <Loader size={16} className="spin" /> : <CheckCircle size={16} />}
                                             Approve

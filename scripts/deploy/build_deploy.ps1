@@ -100,7 +100,7 @@ Set-Content -Path $StagedIndex -Value $IndexContent -Force
 # 4. Database Artifacts
 Write-Host "Dumping latest local database schema..."
 Set-Location "C:\Users\AneeshMathew\HRMS V2"
-php dump_schema.php
+& "C:\xampp\php.exe" dump_schema.php
 
 Write-Host "Packaging Database..."
 if (Test-Path "C:\Users\AneeshMathew\HRMS V2\database\migrations\DATABASE_SCHEMA.sql") {

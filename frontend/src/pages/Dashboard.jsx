@@ -10,6 +10,7 @@ import api from '../services/api';
 import useAuthStore from '../store/useAuthStore';
 import useLayoutStore from '../store/useLayoutStore';
 import { formatDate } from '../utils/dateUtils';
+import { isAdmin as checkIsAdmin } from '../utils/roleConstants';
 
 const Dashboard = () => {
     const [stats, setStats] = useState({
@@ -35,8 +36,17 @@ const Dashboard = () => {
     const { setPageTitle, setPageSubtitle, resetPageHeader } = useLayoutStore();
     
     useEffect(() => {
-        const normalizedRole = user?.role || '';
-        const isAdmin = normalizedRole && normalizedRole !== 'EMPLOYEE';
+        const hasAdminAccess = [
+            ['admin portal', 'view'],
+            ['configuration', 'view'],
+            ['employees', 'view'],
+            ['offboarding', 'view'],
+            ['reports', 'view'],
+            ['assets', 'view'],
+            ['payroll', 'edit']
+        ].some(([mod, act]) => useAuthStore.getState().hasPermission(mod, act));
+        
+        const isAdmin = checkIsAdmin(user?.role_id ?? 0) || hasAdminAccess;
         if (!isAdmin) {
             navigate('/employee-profile');
         } else {

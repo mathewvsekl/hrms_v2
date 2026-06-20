@@ -7,6 +7,7 @@ import useLayoutStore from '../store/useLayoutStore';
 import AttendanceHistoryModal from '../components/AttendanceHistoryModal';
 import DateInput from '../components/ui/DateInput';
 import useNotificationStore from '../store/useNotificationStore';
+import { ROLE_IDS } from '../utils/roleConstants';
 const renderFlag = (country) => {
     if (!country) return <span>🌐</span>;
     const name = country.name?.toLowerCase() || '';
@@ -48,8 +49,9 @@ const renderFlag = (country) => {
 const Attendance = () => {
     const navigate = useNavigate();
     const user = useAuthStore(state => state.user);
-    const userRole = user?.role;
-    const isSuperAdmin = user?.role === 'Super Admin';
+    const isSuperAdmin = user?.role_id === ROLE_IDS.SUPER_ADMIN || user?.role_id === ROLE_IDS.ADMIN;
+    const canCreate = isSuperAdmin || useAuthStore.getState().hasPermission('attendance', 'create');
+    const canEdit = isSuperAdmin || useAuthStore.getState().hasPermission('attendance', 'edit');
     const canConfigure = useAuthStore.getState().hasPermission('configuration', 'view');
     const isAdmin = canConfigure;
 

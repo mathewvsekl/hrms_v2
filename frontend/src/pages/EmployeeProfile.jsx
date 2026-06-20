@@ -16,14 +16,15 @@ import PhoneInput from '../components/ui/PhoneInput';
 import { formatDate } from '../utils/dateUtils';
 import useNotificationStore from '../store/useNotificationStore';
 import { getSecureMediaUrl } from '../utils/mediaHelper';
+import { ROLE_IDS } from '../utils/roleConstants';
 
 const EmployeeProfile = () => {
     const { user } = useAuthStore();
     const [searchParams] = useSearchParams();
     const navigate = useNavigate();
     const employeeId = searchParams.get('id') || user?.employee_id;
-    const normalizedRole = user?.role || '';
-    const isGlobalAdmin = normalizedRole && normalizedRole !== 'EMPLOYEE';
+    const isSuperAdmin = user?.role_id === ROLE_IDS.SUPER_ADMIN || user?.role_id === ROLE_IDS.ADMIN;
+    const isGlobalAdmin = isSuperAdmin || useAuthStore.getState().hasPermission('employees', 'view');
     const isEmployeeView = localStorage.getItem('adminViewMode') === 'employee';
     
     // RBAC Permissions mapped directly to UI controls

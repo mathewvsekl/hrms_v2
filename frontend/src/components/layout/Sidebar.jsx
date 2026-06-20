@@ -20,12 +20,13 @@ import {
 import useAuthStore from '../../store/useAuthStore';
 import api from '../../services/api';
 import packageJson from '../../../package.json';
+import { isAdmin as checkIsAdmin, VIEW_MODE } from '../../utils/roleConstants';
 
 const Sidebar = ({ isOpen }) => {
     const navigate = useNavigate();
     const location = useLocation();
     const [companyName, setCompanyName] = useState('Avantgarde HRMS');
-    const [viewMode, setViewMode] = useState(localStorage.getItem('adminViewMode') || 'admin');
+    const [viewMode, setViewMode] = useState(localStorage.getItem('adminViewMode') || VIEW_MODE.ADMIN);
 
 
 
@@ -46,8 +47,20 @@ const Sidebar = ({ isOpen }) => {
         setExpandedGroups(prev => ({ [title]: !prev[title] }));
     };
 
-    const normalizedRole = user?.role || '';
-    const isAdmin = normalizedRole && normalizedRole !== 'EMPLOYEE';
+    const userRoleId = user?.role_id ?? 0;
+    
+    // Detect custom roles or multi-role users that have admin-level privileges
+    const hasAdminAccess = [
+        ['admin portal', 'view'],
+        ['configuration', 'view'],
+        ['employees', 'view'],
+        ['offboarding', 'view'],
+        ['reports', 'view'],
+        ['assets', 'view'],
+        ['payroll', 'edit']
+    ].some(([mod, act]) => useAuthStore.getState().hasPermission(mod, act));
+    
+    const isAdmin = checkIsAdmin(userRoleId) || hasAdminAccess;
 
     const handleSignOut = async () => {
         await logout();
@@ -189,8 +202,10 @@ const Sidebar = ({ isOpen }) => {
                         // RBAC check for non-employees
                         if (!isEmployeeView && item.module) {
                             // The user requested Admin Page (Configurations) to be accessible to all system roles that have configuration access
+                            // The user requested Admin Page (Configurations) to be accessible to all system roles that have configuration access
                             if (item.name === 'Configurations') {
-                                return useAuthStore.getState().hasPermission('configuration', 'view');
+                                const isGlobalAdmin = userRoleId === 1 || userRoleId === 2; // Super Admin or Admin
+                                return useAuthStore.getState().hasPermission('configuration', 'view') || isGlobalAdmin;
                             }
                             
                             const hasAccess = useAuthStore.getState().hasModuleAccess(item.module);

@@ -13,6 +13,7 @@ import DateInput from '../components/ui/DateInput';
 import Modal from '../components/ui/Modal';
 import { formatDate } from '../utils/dateUtils';
 import useNotificationStore from '../store/useNotificationStore';
+import { ROLE_IDS } from '../utils/roleConstants';
 
 /* ── Sub-components for Configuration ──────────────────── */
 
@@ -721,7 +722,11 @@ const FilePreviewModal = ({ doc, onClose }) => {
 const MyLeavesTab = ({ user, onPreview }) => {
     const location = useLocation();
     const navigate = useNavigate();
-    const isSuperAdmin = user?.role === 'Super Admin';
+    const isSuperAdmin = user?.role_id === ROLE_IDS.SUPER_ADMIN || user?.role_id === ROLE_IDS.ADMIN;
+    const canCreate = isSuperAdmin || useAuthStore.getState().hasPermission('leave', 'create');
+    const canEdit = isSuperAdmin || useAuthStore.getState().hasPermission('leave', 'edit');
+    const canApprove = isSuperAdmin || useAuthStore.getState().hasPermission('leave', 'approve');
+    const canDelete = isSuperAdmin || useAuthStore.getState().hasPermission('leave', 'delete');
     const [balances, setBalances] = useState([]);
     const [history, setHistory] = useState([]);
     const [loading, setLoading] = useState(false);
@@ -1394,9 +1399,13 @@ const MyLeavesTab = ({ user, onPreview }) => {
 const RequestsTab = ({ user, onPreview }) => {
     const location = useLocation();
     const navigate = useNavigate();
-    const isSuperAdmin = user?.role === 'Super Admin';
-    const canApproveLeave = useAuthStore.getState().hasPermission('leave', 'approve');
-    const canEditLeave = useAuthStore.getState().hasPermission('leave', 'edit') || isSuperAdmin;
+    const isSuperAdmin = user?.role_id === ROLE_IDS.SUPER_ADMIN || user?.role_id === ROLE_IDS.ADMIN;
+    const canCreate = isSuperAdmin || useAuthStore.getState().hasPermission('leave', 'create');
+    const canEdit = isSuperAdmin || useAuthStore.getState().hasPermission('leave', 'edit');
+    const canApprove = isSuperAdmin || useAuthStore.getState().hasPermission('leave', 'approve');
+    const canDelete = isSuperAdmin || useAuthStore.getState().hasPermission('leave', 'delete');
+    const canApproveLeave = isSuperAdmin || useAuthStore.getState().hasPermission('leave', 'approve');
+    const canEditLeave = isSuperAdmin || useAuthStore.getState().hasPermission('leave', 'edit');
     const [requests, setRequests] = useState([]);
     const [loading, setLoading] = useState(false);
     const [showPreviewModal, setShowPreviewModal] = useState(false);

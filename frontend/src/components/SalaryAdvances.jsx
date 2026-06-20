@@ -4,6 +4,7 @@ import api from '../services/api';
 import useNotificationStore from '../store/useNotificationStore';
 import useAuthStore from '../store/useAuthStore';
 import Modal from './ui/Modal';
+import { ROLE_IDS } from '../utils/roleConstants';
 
 const formatCurrency = (amount) => {
     return new Intl.NumberFormat('en-US', {
@@ -15,7 +16,8 @@ const formatCurrency = (amount) => {
 const SalaryAdvances = ({ companies }) => {
     const { showAlert } = useNotificationStore();
     const { user } = useAuthStore();
-    const isAdmin = ['Admin', 'Super Admin', 'CountryManager'].includes(user?.role);
+    const isSuperAdmin = user?.role_id === ROLE_IDS.SUPER_ADMIN || user?.role_id === ROLE_IDS.ADMIN;
+    const isAdmin = isSuperAdmin || useAuthStore.getState().hasPermission('payroll', 'edit');
 
     const [advances, setAdvances] = useState([]);
     const [employees, setEmployees] = useState([]);

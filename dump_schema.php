@@ -4,21 +4,24 @@ $db   = 'hrms_v2';
 $user = 'root';
 $pass = '';
 
-$mysqli = new mysqli($host, $user, $pass, $db);
-if ($mysqli->connect_error) {
-    die("Connection failed: " . $mysqli->connect_error);
+try {
+    $pdo = new PDO("mysql:host=$host;dbname=$db;charset=utf8mb4", $user, $pass, [
+        PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION
+    ]);
+} catch (PDOException $e) {
+    die("Connection failed: " . $e->getMessage());
 }
 
 $tables = [];
-$result = $mysqli->query("SHOW TABLES");
-while ($row = $result->fetch_row()) {
+$stmt = $pdo->query("SHOW TABLES");
+while ($row = $stmt->fetch(PDO::FETCH_NUM)) {
     $tables[] = $row[0];
 }
 
 $schema = "";
 foreach ($tables as $table) {
-    $res = $mysqli->query("SHOW CREATE TABLE `$table`");
-    $row = $res->fetch_row();
+    $stmt = $pdo->query("SHOW CREATE TABLE `$table`");
+    $row = $stmt->fetch(PDO::FETCH_NUM);
     $schema .= $row[1] . ";\n\n";
 }
 

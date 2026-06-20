@@ -488,9 +488,12 @@ function dispatchRoute($method, $uri)
     $firstNumericId = $numericIds[0] ?? null;
     $lastNumericId = end($numericIds) ?: null;
 
-    // RBAC Permissions
     if (strpos($uri, '/api/rbac/') === 0) {
-        \App\Middleware\RoleMiddleware::requirePermission('configuration', 'view');
+        if (!\App\Middleware\RoleMiddleware::hasPermission('configuration', 'view') && !\App\Middleware\RoleMiddleware::hasPermission('admin portal', 'view')) {
+            http_response_code(403);
+            echo json_encode(["status" => "error", "message" => "Forbidden: You do not have the required permission."]);
+            exit();
+        }
         $controller = new \App\Controllers\RbacController();
         if ($uri === '/api/rbac/roles' && $method === 'GET')
             return call_user_func([$controller, 'listRoles']);
@@ -517,7 +520,7 @@ function dispatchRoute($method, $uri)
     // Custom Fields (Nested under Companies)
     if (preg_match('/\/api\/organization\/companies\/(\d+)\/custom_fields/', $uri, $matches)) {
         if ($method !== 'GET') {
-            \App\Middleware\RoleMiddleware::requirePermission('organization', 'manage');
+            \App\Middleware\RoleMiddleware::requirePermission('Configuration', 'edit');
         }
         $companyId = $matches[1];
         $fieldId = (count($numericIds) > 1) ? $lastNumericId : null;
@@ -536,7 +539,7 @@ function dispatchRoute($method, $uri)
     // Countries
     if (strpos($uri, '/api/organization/countries') === 0) {
         if ($method !== 'GET') {
-            \App\Middleware\RoleMiddleware::requirePermission('organization', 'manage');
+            \App\Middleware\RoleMiddleware::requirePermission('Configuration', 'edit');
         }
         $controller = new \App\Controllers\OrganizationController();
         if ($method === 'GET')
@@ -800,16 +803,20 @@ function dispatchRoute($method, $uri)
         $controller = new \App\Controllers\CompanyDocumentController();
         if ($method === 'GET') {
             if (strpos($uri, '/api/company-documents/all') === 0) {
+                \App\Middleware\RoleMiddleware::requirePermission('Documents', 'view');
                 return call_user_func([$controller, 'getAllDocuments']);
             }
             return call_user_func([$controller, 'getDocuments']);
         } elseif ($method === 'POST') {
+            \App\Middleware\RoleMiddleware::requirePermission('Documents', 'edit');
             return call_user_func([$controller, 'uploadDocument']);
         } elseif ($method === 'PUT') {
+            \App\Middleware\RoleMiddleware::requirePermission('Documents', 'edit');
             $parts = explode('/', trim($uri, '/'));
             $id = end($parts);
             return call_user_func([$controller, 'updateDocument'], $id);
         } elseif ($method === 'DELETE') {
+            \App\Middleware\RoleMiddleware::requirePermission('Documents', 'delete');
             $parts = explode('/', trim($uri, '/'));
             $id = end($parts);
             return call_user_func([$controller, 'deleteDocument'], $id);
@@ -1148,6 +1155,7 @@ function dispatchRoute($method, $uri)
     if (strpos($uri, '/api/assets') === 0) {
         $controller = new \App\Controllers\AssetController();
         if ($method === 'GET') {
+            \App\Middleware\RoleMiddleware::requirePermission('Assets', 'view');
             $parts = explode('/', trim($uri, '/'));
             $action = end($parts);
             if (strpos($uri, '/api/assets/employee') === 0) {
@@ -1158,6 +1166,7 @@ function dispatchRoute($method, $uri)
             }
             return call_user_func([$controller, 'index']);
         } elseif ($method === 'POST') {
+            \App\Middleware\RoleMiddleware::requirePermission('Assets', 'create');
             if (strpos($uri, '/api/assets/allocate') === 0) {
                 return call_user_func([$controller, 'allocate']);
             }
@@ -1166,10 +1175,12 @@ function dispatchRoute($method, $uri)
             }
             return call_user_func([$controller, 'store']);
         } elseif ($method === 'PUT') {
+            \App\Middleware\RoleMiddleware::requirePermission('Assets', 'edit');
             $parts = explode('/', trim($uri, '/'));
             $id = end($parts);
             return call_user_func([$controller, 'update'], $id);
         } elseif ($method === 'DELETE') {
+            \App\Middleware\RoleMiddleware::requirePermission('Assets', 'delete');
             $parts = explode('/', trim($uri, '/'));
             $id = end($parts);
             return call_user_func([$controller, 'destroy'], $id);
