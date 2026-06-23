@@ -1,7 +1,7 @@
 {
     "name":  "avantgarde-hrms-frontend",
     "private":  true,
-    "version":  "3.0.34-hrms-build3",
+    "version":  "3.0.35-hrms-build5",
     "type":  "module",
     "scripts":  {
                     "dev":  "vite",

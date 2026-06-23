@@ -1,0 +1,13 @@
+[
+  {
+    "version": "v3.0.35-hrms-build2",
+    "date": "2026-06-23",
+    "notes": [
+      "Added comprehensive audit trailing system (AuditPDO, AuditPDOStatement, DataSanitizer).",
+      "Modified database configuration to use new AuditPDO.",
+      "Upgraded audit_logs database table schema (added role_id, module, payload).",
+      "UI updates for Sidebar and Login components.",
+      "Removed leftover local debug and test scripts to secure production package."
+    ]
+  }
+]

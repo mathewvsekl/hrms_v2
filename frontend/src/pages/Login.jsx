@@ -782,7 +782,7 @@ const Login = () => {
                         {step === 'email' && (
                             <>
                                 <div className="auth-header">
-                                    <img src="/api/logo" alt="Avantgarde Logo" className="auth-logo" />
+                                    <img src="/api/logo?v=3" alt="Avantgarde Logo" className="auth-logo" />
                                     <h1>Secure Login</h1>
                                     <p className="subtitle">
                                         Enter your registered corporate email to receive a secure one-time access code.
@@ -842,7 +842,7 @@ const Login = () => {
                         {step === 'otp' && (
                             <>
                                 <div className="auth-header">
-                                    <img src="/api/logo" alt="Avantgarde Logo" className="auth-logo" />
+                                    <img src="/api/logo?v=3" alt="Avantgarde Logo" className="auth-logo" />
                                     <h1>Authentication Code</h1>
                                     <p className="subtitle">
                                         A secure 6-digit code has been dispatched to{' '}

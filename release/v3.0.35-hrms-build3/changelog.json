@@ -1,0 +1,10 @@
+[
+  {
+    "version": "v3.0.35-hrms-build3",
+    "date": "2026-06-23",
+    "notes": [
+      "Fixed critical bug where AuditPDO was failing silently due to PDO::ATTR_PERSISTENT connection configuration.",
+      "Ensured audit logs now write correctly to the database without throwing PDO exceptions."
+    ]
+  }
+]

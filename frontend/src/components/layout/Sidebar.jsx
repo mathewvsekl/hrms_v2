@@ -133,7 +133,7 @@ const Sidebar = ({ isOpen }) => {
         <aside className={`sidebar ${isOpen ? 'mobile-open' : ''}`}>
             <div className="sidebar-header" style={{ marginBottom: '2rem' }}>
                 <img
-                    src="/api/logo"
+                    src="/api/logo?v=3"
                     alt="Avantgarde HRMS Logo"
                     style={{ 
                         width: '80%', 

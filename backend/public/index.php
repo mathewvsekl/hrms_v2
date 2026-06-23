@@ -84,6 +84,17 @@ register_shutdown_function(function() {
     }
 });
 
+// Flush Audit Logs asynchronously after request completes
+register_shutdown_function(function() {
+    if (class_exists('\App\Core\AuditPDO')) {
+        $db = \Database::getInstance()->getConnection();
+        if ($db instanceof \App\Core\AuditPDO) {
+            // Use the same connection, no overhead!
+            \App\Core\AuditPDO::flushLogs($db);
+        }
+    }
+});
+
 // ASSET SERVING SAFETY NET: Handle direct file requests for /public/
 $requestUri = $_SERVER['REQUEST_URI'] ?? '';
 $cleanUri = parse_url($requestUri, PHP_URL_PATH);

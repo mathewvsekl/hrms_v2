@@ -1,0 +1,10 @@
+[
+  {
+    "version": "v3.0.35-hrms-build4",
+    "date": "2026-06-23",
+    "notes": [
+      "Added explicit debug logging to AuditPDO and AuditPDOStatement to trace why live queries are not triggering flushLogs.",
+      "Ensured DataSanitizer does not throw exceptions when parsing positional array parameters."
+    ]
+  }
+]

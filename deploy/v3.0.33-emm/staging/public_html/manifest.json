@@ -3,22 +3,22 @@
   "name": "Avantgarde HRMS",
   "icons": [
     {
-      "src": "favicon.ico",
+      "src": "favicon.ico?v=3",
       "sizes": "64x64 32x32 24x24 16x16",
       "type": "image/x-icon"
     },
     {
-      "src": "favicon.svg",
+      "src": "favicon.svg?v=3",
       "type": "image/svg+xml",
       "sizes": "any"
     },
     {
-      "src": "favicon.svg",
+      "src": "favicon.svg?v=3",
       "type": "image/svg+xml",
       "sizes": "192x192"
     },
     {
-      "src": "favicon.svg",
+      "src": "favicon.svg?v=3",
       "type": "image/svg+xml",
       "sizes": "512x512"
     }
