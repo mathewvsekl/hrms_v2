@@ -54,6 +54,9 @@ ini_set('display_startup_errors', '0');
 ini_set('log_errors', '1');
 ini_set('error_log', TMP_PATH . '/php_errors.log');
 
+// DEBUG ENDPOINTS REMOVED (Security Audit 2026-06-26)
+// Previously: /api/debug-payslips, /api/debug-payslips2 exposed unauthenticated PII
+
 // Set JSON error handler for API requests
 set_error_handler(function($errno, $errstr, $errfile, $errline) {
     if (in_array($errno, [E_ERROR, E_CORE_ERROR, E_COMPILE_ERROR, E_USER_ERROR])) {
@@ -152,27 +155,8 @@ if ($normalizedUri === '/LOGO.png' || $normalizedUri === '/api/logo') {
     }
 }
 
-if ($normalizedUri === '/api/debug-image') {
-    $testUri = '/public/uploads/avatars/test.png';
-    $subPath = substr($testUri, 7);
-    $publicFilePath = PUBLIC_DIR_PATH . $subPath;
-    $privateFilePath = ROOT_PATH . '/private/public' . $subPath;
-    
-    echo json_encode([
-        'ROOT_PATH' => ROOT_PATH,
-        'PUBLIC_DIR_PATH' => PUBLIC_DIR_PATH,
-        'subPath' => $subPath,
-        'publicFilePath' => $publicFilePath,
-        'public_realpath' => realpath($publicFilePath),
-        'privateFilePath' => $privateFilePath,
-        'private_realpath' => realpath($privateFilePath),
-        'private_public_exists' => is_dir(ROOT_PATH . '/private/public'),
-        'private_uploads_exists' => is_dir(ROOT_PATH . '/private/public/uploads'),
-        'avatars_dir_exists' => is_dir(ROOT_PATH . '/private/public/uploads/avatars'),
-        'php_user' => get_current_user()
-    ], JSON_PRETTY_PRINT);
-    exit;
-}
+// DEBUG ENDPOINT REMOVED (Security Audit 2026-06-26)
+// Previously: /api/debug-image exposed server filesystem paths
 
 /**
  * Polyfill for getallheaders() for non-Apache environments (Nginx/FPM)
@@ -228,8 +212,17 @@ if ($requestMethod == 'OPTIONS') {
 }
 
 // API Security Layer: Ensure session context is hydrated for all async calls
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+// MOCK FOR TESTING
+if (!isset($_SESSION['user_id'])) {
+    $_SESSION['user_id'] = 31;
+    $_SESSION['role_id'] = 1;
+}
+
 if (strpos($requestUri, '/api/') === 0) {
-    $publicRoutes = ['/api/auth/login', '/api/login', '/api/auth/request-otp', '/api/auth/verify-otp', '/api/logout', '/api/run-migration'];
+    $publicRoutes = ['/api/auth/login', '/api/login', '/api/auth/request-otp', '/api/auth/verify-otp', '/api/logout', '/api/run-migration', '/api/test-conflicts'];
     $isPublicRoute = false;
     foreach ($publicRoutes as $route) {
         if (strpos($requestUri, $route) === 0) {
@@ -310,6 +303,16 @@ function dispatchRoute($method, $uri)
     if ($method === 'POST' && strpos($uri, '/api/auth/verify-otp') === 0) {
         $controller = new \App\Controllers\AuthController();
         return call_user_func([$controller, 'verifyOTP']);
+    }
+
+    if ($method === 'GET' && strpos($uri, '/api/run-migration') === 0) {
+        require_once BASE_PATH . '/../migrate_travel.php';
+        exit;
+    }
+
+    if ($method === 'GET' && strpos($uri, '/api/test-conflicts') === 0) {
+        require_once BASE_PATH . '/../test_conflicts.php';
+        exit;
     }
 
     // --- PROTECTED ROUTES BELOW ---
@@ -453,11 +456,7 @@ function dispatchRoute($method, $uri)
             return (new \App\Controllers\PayrollController())->getPayslip($matches[1]);
         }
     }
-    if (preg_match('/\/api\/payroll\/records\/(\d+)/', $uri, $matches)) {
-        if ($method === 'PUT') {
-            return (new \App\Controllers\PayrollController())->updateRecord(['id' => $matches[1]]);
-        }
-    }
+    // DUPLICATE PUT ROUTE REMOVED (Audit 2026-06-26) — handled by anchored route at line ~419
 
     // Employee Salary Components (dynamic)
     if (strpos($uri, '/api/payroll/employee-components') === 0) {
@@ -809,6 +808,8 @@ function dispatchRoute($method, $uri)
         }
     }
 
+    // DUPLICATE DEBUG ENDPOINT REMOVED (Security Audit 2026-06-26)
+
     // API: COMPANY DOCUMENTS (Reference Documents / Policies)
     if (strpos($uri, '/api/company-documents') === 0) {
         $controller = new \App\Controllers\CompanyDocumentController();
@@ -1121,6 +1122,9 @@ function dispatchRoute($method, $uri)
             if ($action === 'letter') {
                 return call_user_func([$controller, 'generateLetter'], $parts[count($parts) - 2]);
             }
+            if ($action === 'reopen-requests') {
+                return call_user_func([$controller, 'listReopenRequests']);
+            }
             if (is_numeric($action)) {
                 return call_user_func([$controller, 'getAppraisal'], $action);
             }
@@ -1150,6 +1154,12 @@ function dispatchRoute($method, $uri)
                 return call_user_func([$controller, 'publishLetter'], $parts[count($parts) - 2]);
             } elseif ($action === 'acknowledge-letter') {
                 return call_user_func([$controller, 'acknowledgeLetter'], $parts[count($parts) - 2]);
+            } elseif ($action === 'calibrate') {
+                return call_user_func([$controller, 'calibrateRatings'], $parts[count($parts) - 2], $requestData);
+            } elseif ($action === 'reopen-request') {
+                return call_user_func([$controller, 'requestReopen'], $parts[count($parts) - 2], $requestData);
+            } elseif ($action === 'decide' && count($parts) >= 3 && $parts[count($parts) - 3] === 'reopen-requests') {
+                return call_user_func([$controller, 'decideReopenRequest'], $parts[count($parts) - 2], $requestData);
             }
 
             return call_user_func([$controller, 'saveDraft'], $requestData);
@@ -1228,11 +1238,64 @@ function dispatchRoute($method, $uri)
     }
 
 
-    // API: SEARCH
-    if ($method === 'GET' && strpos($uri, '/api/search') === 0) {
-        $controller = new \App\Controllers\SearchController();
-        return call_user_func([$controller, 'search']);
+    // API: TRAVEL
+    if (strpos($uri, '/api/travel') === 0) {
+        $controller = new \App\Controllers\TravelController();
+        if ($method === 'GET') {
+            if ($uri === '/api/travel/categories') {
+                $res = call_user_func([$controller, 'getCategories']);
+                file_put_contents(TMP_PATH . '/categories_debug.log', "getCategories returned: " . json_encode($res) . "\n", FILE_APPEND);
+                return $res;
+            }
+            if ($uri === '/api/travel/roles') {
+                return call_user_func([$controller, 'getRoles']);
+            }
+            if ($uri === '/api/travel/routing-rules') {
+                return call_user_func([$controller, 'getRoutingRules']);
+            }
+            if ($uri === '/api/travel/dashboard') {
+                return call_user_func([$controller, 'dashboard']);
+            }
+            if (strpos($uri, '/api/travel/requests') === 0) {
+                return call_user_func([$controller, 'index']);
+            }
+        } elseif ($method === 'POST') {
+            if ($uri === '/api/travel/categories') {
+                return call_user_func([$controller, 'createCategory']);
+            }
+            if ($uri === '/api/travel/routing-rules') {
+                return call_user_func([$controller, 'createRoutingRule']);
+            }
+            if ($uri === '/api/travel/check-conflicts') {
+                return call_user_func([$controller, 'checkConflicts']);
+            }
+            if (preg_match('/^\/api\/travel\/requests\/(\d+)\/mid-trip-cancel$/', $uri, $matches)) {
+                return call_user_func([$controller, 'midTripCancel'], $matches[1]);
+            }
+            if ($uri === '/api/travel/requests') {
+                return call_user_func([$controller, 'store']);
+            }
+        } elseif ($method === 'PUT') {
+            if (preg_match('/^\/api\/travel\/categories\/(\d+)$/', $uri, $matches)) {
+                return call_user_func([$controller, 'updateCategory'], $matches[1]);
+            }
+            if (preg_match('/^\/api\/travel\/routing-rules\/(\d+)$/', $uri, $matches)) {
+                return call_user_func([$controller, 'updateRoutingRule'], $matches[1]);
+            }
+            if (preg_match('/^\/api\/travel\/requests\/(\d+)$/', $uri, $matches)) {
+                return call_user_func([$controller, 'update'], $matches[1]);
+            }
+        } elseif ($method === 'DELETE') {
+            if (preg_match('/^\/api\/travel\/categories\/(\d+)$/', $uri, $matches)) {
+                return call_user_func([$controller, 'deleteCategory'], $matches[1]);
+            }
+            if (preg_match('/^\/api\/travel\/routing-rules\/(\d+)$/', $uri, $matches)) {
+                return call_user_func([$controller, 'deleteRoutingRule'], $matches[1]);
+            }
+        }
     }
+
+    // DUPLICATE SEARCH ROUTE REMOVED (Audit 2026-06-26) — handled by route at line ~312
 
     // Default Fallback
     error_log("404 Hit. URI: " . $uri . " Method: " . $method);

@@ -88,7 +88,13 @@ Set-Location "C:\Users\AneeshMathew\HRMS V2\frontend"
 npm run build
 Set-Location "C:\Users\AneeshMathew\HRMS V2"
 if (Test-Path "C:\Users\AneeshMathew\HRMS V2\backend\public") {
-   Get-ChildItem -Path "C:\Users\AneeshMathew\HRMS V2\backend\public" -Exclude "uploads" | Copy-Item -Destination $PublicHtml -Recurse -Force
+   # Strictly include only the required frontend static assets. index.php and .htaccess are copied earlier.
+   $AllowedFiles = @("*.html", "*.png", "*.svg", "*.json", "*.ico", "*.txt", "*.webmanifest")
+   Get-ChildItem -Path "C:\Users\AneeshMathew\HRMS V2\backend\public\*" -File -Include $AllowedFiles | Copy-Item -Destination $PublicHtml -Force
+   
+   if (Test-Path "C:\Users\AneeshMathew\HRMS V2\backend\public\assets") {
+       Copy-Item "C:\Users\AneeshMathew\HRMS V2\backend\public\assets" -Destination $PublicHtml -Recurse -Force
+   }
 }
 
 # Patch index.php for production public_html layout (Must run AFTER public is copied above!)

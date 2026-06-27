@@ -331,13 +331,12 @@ class PayrollService
                     if (!empty($comp['is_income_tax']) || strpos($nameLower, 'paye') !== false) {
                         $paye = $amt;
                     }
+                    if (strpos($nameLower, 'nssf') !== false) {
+                        $nssf['employee'] = $amt;
+                    }
                 }
 
                 if ($totalEarningsAmt <= 0) continue; // Skip employees with no salary
-                
-                if ($isUganda) {
-                    $nssf = $this->calculateNSSF($totalEarningsAmt);
-                }
 
                 // Fetch advances
                 $advStmt = $this->db->prepare("SELECT id, amount, currency_code, installment_amount, deducted_amount FROM salary_advances WHERE employee_id = ? AND status IN ('Approved', 'Partially Deducted') AND (deduction_start_date IS NULL OR deduction_start_date <= ?)");
@@ -381,21 +380,10 @@ class PayrollService
 
                 $totalOtherDeductions = 0.00;
                 foreach ($deductions as $d) {
-                    $dname = strtolower($d['name']);
-                    $isPayeComponent = false;
-                    foreach ($allComponents as $comp) {
-                        if ($comp['name'] === $d['name'] && (!empty($comp['is_income_tax']) || strpos(strtolower($comp['name']), 'paye') !== false)) {
-                            $isPayeComponent = true;
-                            break;
-                        }
-                    }
-                    if ($isPayeComponent) continue;
-                    if ($isUganda && strpos($dname, 'nssf') !== false) continue;
-                    
                     $totalOtherDeductions += (float)$d['amount'];
                 }
 
-                $netPay = $totalEarningsAmt - $paye - $nssf['employee'] - $totalAdvanceDeductions - $totalOtherDeductions;
+                $netPay = $totalEarningsAmt - $totalAdvanceDeductions - $totalOtherDeductions;
 
                 $insertStmt->execute([
                     $emp['id'],
@@ -633,13 +621,12 @@ class PayrollService
                     if (!empty($comp['is_income_tax']) || strpos($nameLower, 'paye') !== false) {
                         $paye = $amt;
                     }
+                    if (strpos($nameLower, 'nssf') !== false) {
+                        $nssf['employee'] = $amt;
+                    }
                 }
 
                 if ($totalEarningsAmt <= 0) continue;
-                
-                if ($isUganda) {
-                    $nssf = $this->calculateNSSF($totalEarningsAmt);
-                }
 
                 $advStmt = $this->db->prepare("SELECT id, amount, currency_code, installment_amount, deducted_amount FROM salary_advances WHERE employee_id = ? AND status IN ('Approved', 'Partially Deducted') AND (deduction_start_date IS NULL OR deduction_start_date <= ?)");
                 $advStmt->execute([$emp['id'], $targetDate]);
@@ -673,20 +660,9 @@ class PayrollService
 
                 $totalOtherDeductions = 0.00;
                 foreach ($deductions as $d) {
-                    $dname = strtolower($d['name']);
-                    $isPayeComponent = false;
-                    foreach ($allComponents as $comp) {
-                        if ($comp['name'] === $d['name'] && (!empty($comp['is_income_tax']) || strpos(strtolower($comp['name']), 'paye') !== false)) {
-                            $isPayeComponent = true;
-                            break;
-                        }
-                    }
-                    if ($isPayeComponent) continue;
-                    if ($isUganda && strpos($dname, 'nssf') !== false) continue;
-
                     $totalOtherDeductions += (float)$d['amount'];
                 }
-                $netPay = $totalEarningsAmt - $paye - $nssf['employee'] - $totalAdvanceDeductions - $totalOtherDeductions;
+                $netPay = $totalEarningsAmt - $totalAdvanceDeductions - $totalOtherDeductions;
 
                 $previewRecords[] = [
                     'employee_id' => $emp['id'],

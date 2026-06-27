@@ -46,7 +46,10 @@ CREATE TABLE `appraisal_ratings` (
   `question_id` int DEFAULT NULL COMMENT 'Maps to template_questions for predefined soft skills',
   `employee_rating` decimal(4,2) DEFAULT NULL,
   `manager_rating` decimal(4,2) DEFAULT NULL,
+  `manager_final_rating` decimal(4,2) DEFAULT NULL,
   `hr_adjusted_rating` decimal(4,2) DEFAULT NULL,
+  `hr_calibrated_rating` decimal(4,2) DEFAULT NULL,
+  `final_rating` decimal(4,2) DEFAULT NULL,
   `manager_comment` text COLLATE utf8mb4_general_ci,
   `created_at_utc` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
@@ -304,7 +307,9 @@ CREATE TABLE `employee_appraisals` (
   `manager_id` int DEFAULT NULL COMMENT 'Snapshot of reporting manager at creation time',
   `cycle_id` int NOT NULL,
   `template_id` int NOT NULL,
-  `status` enum('draft','manager_review','hr_review','finalized') COLLATE utf8mb4_general_ci DEFAULT 'draft',
+  `status` enum('draft','in_progress','returned','calibration','completed','finalized','cancelled') COLLATE utf8mb4_general_ci DEFAULT 'draft',
+  `current_approval_step_id` int DEFAULT NULL,
+  `current_step_order` int DEFAULT '0',
   `eligible_for_increment` tinyint(1) DEFAULT NULL COMMENT 'Determined by HR in Section E',
   `eligible_for_bonus` tinyint(1) DEFAULT NULL COMMENT 'Determined by HR in Section E',
   `final_rating` decimal(4,2) DEFAULT NULL,
@@ -802,3 +807,91 @@ CREATE TABLE `users` (
   KEY `idx_user_token` (`api_token`)
 ) ENGINE=InnoDB AUTO_INCREMENT=56 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
+CREATE TABLE `snapshot_approval_matrices` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `cycle_id` int NOT NULL,
+  `company_id` int NOT NULL,
+  `step_order` int NOT NULL,
+  `role_required` varchar(50) NOT NULL,
+  `created_at_utc` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_cycle_id` (`cycle_id`),
+  KEY `idx_company_id` (`company_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+CREATE TABLE `snapshot_fallback_hierarchies` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `cycle_id` int NOT NULL,
+  `company_id` int NOT NULL,
+  `sequence_order` int NOT NULL,
+  `role` varchar(50) NOT NULL,
+  `created_at_utc` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_cycle_id` (`cycle_id`),
+  KEY `idx_company_id` (`company_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+CREATE TABLE `snapshot_escalation_rules` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `cycle_id` int NOT NULL,
+  `company_id` int NOT NULL,
+  `sla_hours` int NOT NULL,
+  `escalation_role` varchar(50) NOT NULL,
+  `created_at_utc` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_cycle_id` (`cycle_id`),
+  KEY `idx_company_id` (`company_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+CREATE TABLE `approval_delegations` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `delegator_id` int NOT NULL,
+  `delegatee_id` int NOT NULL,
+  `start_date` date NOT NULL,
+  `end_date` date NOT NULL,
+  `status` enum('active','revoked','expired') DEFAULT 'active',
+  `created_at_utc` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_delegator_id` (`delegator_id`),
+  KEY `idx_delegatee_id` (`delegatee_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+CREATE TABLE `appraisal_calibration_audit` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `appraisal_id` int NOT NULL,
+  `rating_id` int DEFAULT NULL,
+  `old_rating` decimal(4,2) DEFAULT NULL,
+  `new_rating` decimal(4,2) DEFAULT NULL,
+  `changed_by_id` int NOT NULL,
+  `justification` text NOT NULL,
+  `created_at_utc` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_appraisal_id` (`appraisal_id`),
+  KEY `idx_changed_by_id` (`changed_by_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+CREATE TABLE `workflow_events` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `appraisal_id` int NOT NULL,
+  `event_type` varchar(100) NOT NULL,
+  `payload` json NOT NULL,
+  `dispatched_at_utc` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_appraisal_id` (`appraisal_id`),
+  KEY `idx_event_type` (`event_type`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+CREATE TABLE `appraisal_reopen_requests` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `appraisal_id` int NOT NULL,
+  `requested_by_id` int NOT NULL,
+  `reason` text NOT NULL,
+  `status` enum('PENDING','APPROVED','REJECTED','EXPIRED') DEFAULT 'PENDING',
+  `expiry_window_hours` int DEFAULT '48',
+  `approved_by_id` int DEFAULT NULL,
+  `approved_at_utc` timestamp NULL DEFAULT NULL,
+  `created_at_utc` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_appraisal_id` (`appraisal_id`),
+  KEY `idx_requested_by_id` (`requested_by_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;

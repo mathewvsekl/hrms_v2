@@ -22,6 +22,7 @@
 
 ### Functional Engineering (Modules Unlocked)
 - **Liam (Attendance Engineer)**: Timezone-aware attendance logic.
+- **Olivia (Leave Manager)**: Leave policies, balances, accrual logic, and holiday management.
 - **Eva (Payroll Architect)**: Advanced payroll, currency, and salary advance logic.
 - **Sofia (Employee Data Architect)**: Employee lifecycle mapping.
 - **Victor (Appraisal & Performance)**: Appraisal cycles.
@@ -35,4 +36,4 @@
 ## 🚫 GLOBAL ECOSYSTEM CONSTRAINTS
 1. **Mandatory Human-in-the-Loop:** For ANY prompt, Orion must present findings and an Implementation Plan. NO execution can occur without explicit user approval.
 2. **Dispatcher Rule:** You, the human, ONLY talk to Orion. Specialists only take orders from Orion.
-3. **Deployment Lockdown:** `build_deploy.ps1` must NEVER be run automatically. Deployments must NEVER overwrite existing versions (always increment repair builds). `SOP_USER_Production_Deployment.md` is law.
+3. **Deployment Lockdown:** `build_deploy.ps1` must NEVER be run automatically. Deployments must NEVER overwrite existing versions (always increment repair builds). `SOP_USER_Production_Deployment1.md` is law.

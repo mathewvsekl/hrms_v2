@@ -164,9 +164,14 @@ const Payroll = () => {
             const data = res.data?.data || [];
             setRecords(data);
             
-            // Auto-select drafts for approval
-            const drafts = data.filter(r => r.status === 'Draft' || r.run_status === 'Draft').map(r => r.id);
-            setSelectedApprovalIds(drafts);
+            // Auto-select records that need action
+            const actionable = data.filter(r => 
+                r.status === 'Draft' || 
+                r.run_status === 'Draft' || 
+                r.status === 'Pending Approval' || 
+                r.status === 'Processed'
+            ).map(r => r.id);
+            setSelectedApprovalIds(actionable);
         } catch (error) {
             console.error("Failed to fetch records", error);
             showAlert('Error', 'Failed to fetch payroll records', 'error');
@@ -419,6 +424,7 @@ const Payroll = () => {
             showAlert('Success', 'Payroll record updated successfully', 'success');
             setEditingRecord(null);
             fetchRecords();
+            fetchRuns();
         } catch (error) {
             console.error("Failed to update record", error);
             showAlert('Error', 'Failed to update payroll record', 'error');
@@ -439,6 +445,7 @@ const Payroll = () => {
             showAlert('Success', `${selectedApprovalIds.length} payroll record(s) deleted successfully`, 'success');
             setSelectedApprovalIds([]);
             fetchRecords();
+            fetchRuns();
         } catch (error) {
             console.error("Failed to delete records", error);
             showAlert('Error', 'Failed to delete some records', 'error');
@@ -448,14 +455,23 @@ const Payroll = () => {
     };
 
     const handleProcessPayment = async () => {
-        const approvedIds = records.filter(r => r.status === 'Processed').map(r => r.id);
-        if (!approvedIds.length) return;
+        const approvedIds = selectedApprovalIds.filter(id => {
+            const r = records.find(x => x.id === id);
+            return r && r.status === 'Processed';
+        });
+        
+        if (!approvedIds.length) {
+            showAlert('Info', 'No processed records selected for payment', 'info');
+            return;
+        }
         
         if (!window.confirm(`Are you sure you want to process payment for ${approvedIds.length} approved record(s)? This will generate PDF payslips and mark them as Paid. This may take a moment.`)) return;
         
         setSubmitting(true);
         setProcessingPayslips(true);
         try {
+            const res = await api.post('/payroll/process', { record_ids: approvedIds });
+            
             const html2pdf = (await import('html2pdf.js')).default;
             
             for (let id of approvedIds) {
@@ -481,7 +497,8 @@ const Payroll = () => {
                     const formData = new FormData();
                     formData.append('document', pdfBlob, opt.filename);
                     formData.append('employee_id', data.employee_id);
-                    formData.append('company_id', data.company_id || selectedRun?.company_id);
+                    const compId = data.company_id || selectedRun?.company_id;
+                    if (compId) formData.append('company_id', compId);
                     formData.append('month', data.month);
                     formData.append('year', data.year);
                     
@@ -491,7 +508,6 @@ const Payroll = () => {
                 }
             }
             
-            const res = await api.post('/payroll/process', { record_ids: approvedIds });
             showAlert('Success', res.data.message || 'Payment processed successfully', 'success');
             
             // Reload runs and records to reflect Paid status
@@ -561,7 +577,7 @@ const Payroll = () => {
 
     // Calculate totals
     const totals = {
-        gross: 0, paye: 0, nssf: 0, advances: 0, net: 0,
+        gross: 0, paye: 0, nssf: 0, advances: 0, net: 0, processedAmt: 0, pendingAmt: 0,
         earnings: {}, deductions: {}
     };
     earningCols.forEach(c => totals.earnings[c] = 0);
@@ -572,7 +588,15 @@ const Payroll = () => {
         totals.paye += parseFloat(record.paye_deduction) || 0;
         totals.nssf += parseFloat(record.nssf_employee_deduction) || 0;
         totals.advances += parseFloat(record.advance_deductions) || 0;
-        totals.net += parseFloat(record.net_pay) || 0;
+        const net = parseFloat(record.net_pay) || 0;
+        totals.net += net;
+        
+        const runStatus = record.run_status || record.status;
+        if (runStatus === 'Paid') {
+            totals.processedAmt += net;
+        } else {
+            totals.pendingAmt += net;
+        }
 
         earningCols.forEach(col => {
             const e = record.parsedEarnings.find(x => x.name === col);
@@ -583,6 +607,8 @@ const Payroll = () => {
             if (d) totals.deductions[col] += parseFloat(d.amount) || 0;
         });
     });
+
+    const hasAdvances = totals.advances > 0;
 
     return (
         <div>
@@ -703,7 +729,10 @@ const Payroll = () => {
                         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                             <button 
                                 className="btn btn-secondary" 
-                                onClick={() => setSelectedRun(null)}
+                                onClick={() => {
+                                    setSelectedRun(null);
+                                    fetchRuns();
+                                }}
                                 style={{ padding: '6px 12px', background: '#e2e8f0', border: 'none', borderRadius: '6px', cursor: 'pointer' }}
                             >
                                 &larr; Back to Runs
@@ -748,10 +777,10 @@ const Payroll = () => {
                                 <button
                                     className="btn btn-primary"
                                     onClick={handleProcessPayment}
-                                    disabled={submitting || records.filter(r => r.status === 'Processed').length === 0}
+                                    disabled={submitting || selectedApprovalIds.filter(id => records.find(r => r.id === id)?.status === 'Processed').length === 0}
                                     style={{ padding: '8px 16px', borderRadius: '8px', border: 'none', cursor: submitting ? 'not-allowed' : 'pointer', background: '#3b82f6' }}
                                 >
-                                    {processingPayslips ? <><Loader size={14} className="spin" style={{marginRight: '6px'}}/> Processing Payslips...</> : submitting ? '...' : `Process Payment`}
+                                    {processingPayslips ? <><Loader size={14} className="spin" style={{marginRight: '6px'}}/> Processing Payslips...</> : submitting ? '...' : `Process Payment (${selectedApprovalIds.filter(id => records.find(r => r.id === id)?.status === 'Processed').length})`}
                                 </button>
                             )}
                         </div>
@@ -769,28 +798,33 @@ const Payroll = () => {
                                     </div>
                                 )}
                             </div>
-                            {isUganda && (
-                                <>
-                                    <div className="card" style={{ padding: '16px 20px', flex: '1', minWidth: '200px' }}>
-                                        <p style={{ margin: '0 0 4px', fontSize: '13px', color: '#64748b' }}>Total PAYE</p>
-                                        <h4 style={{ margin: 0, fontSize: '20px', color: '#ef4444' }}><div style={{ textAlign: 'right', width: '100%' }}>{currentCurrency} {formatCurrency(totals.paye)}</div></h4>
-                                        {selectedRun?.reporting_currency && selectedRun?.exchange_rate && (
-                                            <div style={{ fontSize: '13px', color: '#64748b', marginTop: '4px' }}>
-                                                {selectedRun.reporting_currency} {(totals.paye / selectedRun.exchange_rate).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                                            </div>
-                                        )}
+                            <div className="card" style={{ padding: '16px 20px', flex: '1', minWidth: '200px' }}>
+                                <p style={{ margin: '0 0 4px', fontSize: '13px', color: '#64748b' }}>Total Advance Deduction</p>
+                                <h4 style={{ margin: 0, fontSize: '20px', color: '#ef4444' }}><div style={{ textAlign: 'right', width: '100%' }}>{currentCurrency} {formatCurrency(totals.advances)}</div></h4>
+                                {selectedRun?.reporting_currency && selectedRun?.exchange_rate && (
+                                    <div style={{ fontSize: '13px', color: '#64748b', marginTop: '4px' }}>
+                                        {selectedRun.reporting_currency} {(totals.advances / selectedRun.exchange_rate).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                     </div>
-                                    <div className="card" style={{ padding: '16px 20px', flex: '1', minWidth: '200px' }}>
-                                        <p style={{ margin: '0 0 4px', fontSize: '13px', color: '#64748b' }}>Total NSSF</p>
-                                        <h4 style={{ margin: 0, fontSize: '20px', color: '#ef4444' }}><div style={{ textAlign: 'right', width: '100%' }}>{currentCurrency} {formatCurrency(totals.nssf)}</div></h4>
-                                        {selectedRun?.reporting_currency && selectedRun?.exchange_rate && (
-                                            <div style={{ fontSize: '13px', color: '#64748b', marginTop: '4px' }}>
-                                                {selectedRun.reporting_currency} {(totals.nssf / selectedRun.exchange_rate).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                                            </div>
-                                        )}
+                                )}
+                            </div>
+                            <div className="card" style={{ padding: '16px 20px', flex: '1', minWidth: '200px' }}>
+                                <p style={{ margin: '0 0 4px', fontSize: '13px', color: '#64748b' }}>Pending Amount</p>
+                                <h4 style={{ margin: 0, fontSize: '20px', color: '#f59e0b' }}><div style={{ textAlign: 'right', width: '100%' }}>{currentCurrency} {formatCurrency(totals.pendingAmt)}</div></h4>
+                                {selectedRun?.reporting_currency && selectedRun?.exchange_rate && (
+                                    <div style={{ fontSize: '13px', color: '#64748b', marginTop: '4px' }}>
+                                        {selectedRun.reporting_currency} {(totals.pendingAmt / selectedRun.exchange_rate).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                     </div>
-                                </>
-                            )}
+                                )}
+                            </div>
+                            <div className="card" style={{ padding: '16px 20px', flex: '1', minWidth: '200px' }}>
+                                <p style={{ margin: '0 0 4px', fontSize: '13px', color: '#64748b' }}>Processed Amount</p>
+                                <h4 style={{ margin: 0, fontSize: '20px', color: '#3b82f6' }}><div style={{ textAlign: 'right', width: '100%' }}>{currentCurrency} {formatCurrency(totals.processedAmt)}</div></h4>
+                                {selectedRun?.reporting_currency && selectedRun?.exchange_rate && (
+                                    <div style={{ fontSize: '13px', color: '#64748b', marginTop: '4px' }}>
+                                        {selectedRun.reporting_currency} {(totals.processedAmt / selectedRun.exchange_rate).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                    </div>
+                                )}
+                            </div>
                             <div className="card" style={{ padding: '16px 20px', flex: '1', minWidth: '200px' }}>
                                 <p style={{ margin: '0 0 4px', fontSize: '13px', color: '#64748b' }}>Total Net Pay</p>
                                 <h4 style={{ margin: 0, fontSize: '20px', color: '#10b981' }}><div style={{ textAlign: 'right', width: '100%' }}>{currentCurrency} {formatCurrency(totals.net)}</div></h4>
@@ -868,10 +902,10 @@ const Payroll = () => {
                                             <th style={{ padding: '16px 24px', width: '40px' }}>
                                                 <input 
                                                     type="checkbox" 
-                                                    checked={selectedApprovalIds.length > 0 && selectedApprovalIds.length === records.filter(r => r.status === 'Draft' || r.status === 'Pending Approval' || r.run_status === 'Draft' || isAdmin).length}
+                                                    checked={selectedApprovalIds.length > 0 && selectedApprovalIds.length === records.filter(r => r.status === 'Draft' || r.status === 'Pending Approval' || r.status === 'Processed' || r.run_status === 'Draft' || isAdmin).length}
                                                     onChange={(e) => {
                                                         if (e.target.checked) {
-                                                            setSelectedApprovalIds(records.filter(r => r.status === 'Draft' || r.status === 'Pending Approval' || r.run_status === 'Draft' || isAdmin).map(r => r.id));
+                                                            setSelectedApprovalIds(records.filter(r => r.status === 'Draft' || r.status === 'Pending Approval' || r.status === 'Processed' || r.run_status === 'Draft' || isAdmin).map(r => r.id));
                                                         } else {
                                                             setSelectedApprovalIds([]);
                                                         }
@@ -884,13 +918,10 @@ const Payroll = () => {
                                             ))}
                                             <th style={{ padding: '16px 24px', fontSize: '13px', fontWeight: '600', color: '#64748b' }}>Gross Pay ({currentCurrency})</th>
                                             <th style={{ padding: '16px 24px', fontSize: '13px', fontWeight: '600', color: '#64748b' }}>Gross Pay ({selectedRun?.reporting_currency || 'Reporting'})</th>
-                                            {isUganda && <>
-                                                <th style={{ padding: '16px 24px', fontSize: '13px', fontWeight: '600', color: '#64748b' }}>PAYE ({currentCurrency})</th>
-                                            <th style={{ padding: '16px 24px', fontSize: '13px', fontWeight: '600', color: '#64748b' }}>NSSF (5%) ({currentCurrency})</th>
-                                            </>}
                                             {deductionCols.map(col => (
                                                 <th key={`h_ded_${col}`} style={{ padding: '16px 24px', fontSize: '13px', fontWeight: '600', color: '#64748b' }}>{col} ({currentCurrency})</th>
                                             ))}
+                                            <th style={{ padding: '16px 24px', fontSize: '13px', fontWeight: '600', color: '#64748b' }}>Advance ({currentCurrency})</th>
                                             <th style={{ padding: '16px 24px', fontSize: '13px', fontWeight: '600', color: '#64748b' }}>Net Pay ({currentCurrency})</th>
                                             <th style={{ padding: '16px 24px', fontSize: '13px', fontWeight: '600', color: '#64748b' }}>Net Pay ({selectedRun?.reporting_currency || 'Reporting'})</th>
                                             <th style={{ padding: '16px 24px', fontSize: '13px', fontWeight: '600', color: '#64748b', textAlign: 'center' }}>Status</th>
@@ -943,16 +974,6 @@ const Payroll = () => {
                                                         <span>{((parseFloat(record.basic_pay || 0) + parseFloat(record.commissions || 0) + parseFloat(record.other_earnings || 0)) / selectedRun.exchange_rate).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                                                     ) : '-'}
                                                 </td>
-                                                {isUganda && <>
-                                                  <td style={{ padding: '16px 24px', fontSize: '14px', color: '#ef4444' }}>
-                                                    <div>{renderCurrency(record.paye_deduction)}</div>
-                                                    
-                                                </td>
-                                                <td style={{ padding: '16px 24px', fontSize: '14px', color: '#ef4444' }}>
-                                                    <div>{renderCurrency(record.nssf_employee_deduction)}</div>
-                                                    
-                                                </td>
-                                                  </>}
                                                 {deductionCols.map(col => {
                                                     const d = record.parsedDeductions.find(x => x.name === col);
                                                     return (
@@ -962,6 +983,9 @@ const Payroll = () => {
                                                         </td>
                                                     );
                                                 })}
+                                                <td style={{ padding: '16px 24px', fontSize: '14px', color: '#ef4444' }}>
+                                                    <div>{renderCurrency(record.advance_deductions)}</div>
+                                                </td>
                                                 <td style={{ padding: '16px 24px', fontSize: '14px', color: '#10b981', fontWeight: '600' }}>
                                                     <div>{renderCurrency(record.net_pay)}</div>
                                                     
@@ -1034,13 +1058,10 @@ const Payroll = () => {
                                                     <span>{(totals.gross / selectedRun.exchange_rate).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                                                 ) : '-'}
                                             </td>
-                                            {isUganda && <>
-                                                <td style={{ padding: '16px 24px', fontSize: '14px', fontWeight: '700', color: '#ef4444' }}>{renderCurrency(totals.paye)}</td>
-                                                <td style={{ padding: '16px 24px', fontSize: '14px', fontWeight: '700', color: '#ef4444' }}>{renderCurrency(totals.nssf)}</td>
-                                            </>}
                                             {deductionCols.map(col => (
                                                 <td key={`tot_ded_${col}`} style={{ padding: '16px 24px', fontSize: '14px', fontWeight: '700', color: '#ef4444' }}>{renderCurrency(totals.deductions[col])}</td>
                                             ))}
+                                            <td style={{ padding: '16px 24px', fontSize: '14px', fontWeight: '700', color: '#ef4444' }}>{renderCurrency(totals.advances)}</td>
                                             <td style={{ padding: '16px 24px', fontSize: '14px', fontWeight: '700', color: '#10b981' }}>{renderCurrency(totals.net)}</td>
                                             <td style={{ padding: '16px 24px', fontSize: '14px', fontWeight: '700', color: '#3b82f6' }}>
                                                 {selectedRun?.reporting_currency && selectedRun?.exchange_rate ? (
@@ -1420,6 +1441,7 @@ const Payroll = () => {
                                 });
                                 const earningCols = Array.from(dynamicEarnings);
                                 const deductionCols = Array.from(dynamicDeductions);
+                                const hasPreviewAdvances = previewRecords.some(r => parseFloat(r.advance_deductions) > 0);
                                 return (
                                 <div style={{ width: '100%', overflowX: 'auto' }}>
                                 <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', minWidth: '1000px' }}>
@@ -1434,13 +1456,10 @@ const Payroll = () => {
                                             ))}
                                             <th style={{ padding: '12px 16px', fontSize: '13px', fontWeight: '600', color: '#64748b', borderBottom: '1px solid #e2e8f0', background: '#f1f5f9' }}>Gross Pay ({currentCurrency})</th>
                                             <th style={{ padding: '12px 16px', fontSize: '13px', fontWeight: '600', color: '#64748b', borderBottom: '1px solid #e2e8f0', background: '#f1f5f9' }}>Gross Pay ({reportingCurrency || 'Reporting'})</th>
-                                            {isUganda && <>
-                                                <th style={{ padding: '12px 16px', fontSize: '13px', fontWeight: '600', color: '#64748b', borderBottom: '1px solid #e2e8f0' }}>PAYE ({currentCurrency})</th>
-                                            <th style={{ padding: '12px 16px', fontSize: '13px', fontWeight: '600', color: '#64748b', borderBottom: '1px solid #e2e8f0' }}>NSSF ({currentCurrency})</th>
-                                            </>}
                                             {deductionCols.map(col => (
                                                 <th key={`h_ded_${col}`} style={{ padding: '12px 16px', fontSize: '13px', fontWeight: '600', color: '#64748b', borderBottom: '1px solid #e2e8f0' }}>{col} ({currentCurrency})</th>
                                             ))}
+                                            <th style={{ padding: '12px 16px', fontSize: '13px', fontWeight: '600', color: '#64748b', borderBottom: '1px solid #e2e8f0' }}>Advance ({currentCurrency})</th>
                                             <th style={{ padding: '12px 16px', fontSize: '13px', fontWeight: '600', color: '#64748b', borderBottom: '1px solid #e2e8f0', background: '#f1f5f9' }}>Net Pay ({currentCurrency})</th>
                                             <th style={{ padding: '12px 16px', fontSize: '13px', fontWeight: '600', color: '#64748b', borderBottom: '1px solid #e2e8f0', background: '#f1f5f9' }}>Net Pay ({reportingCurrency || 'Reporting'})</th>
                                         </tr>
@@ -1481,16 +1500,6 @@ const Payroll = () => {
                                                         <span>{((parseFloat(record.basic_pay || 0) + parseFloat(record.commissions || 0) + parseFloat(record.other_earnings || 0)) / exchangeRate).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                                                     ) : '-'}
                                                 </td>
-                                                {isUganda && <>
-                                                  <td style={{ padding: '12px 16px', fontSize: '14px', color: '#ef4444' }}>
-                                                    <div>{renderCurrency(record.paye_deduction)}</div>
-                                                    
-                                                </td>
-                                                <td style={{ padding: '12px 16px', fontSize: '14px', color: '#ef4444' }}>
-                                                    <div>{renderCurrency(record.nssf_employee_deduction)}</div>
-                                                    
-                                                </td>
-                                                  </>}
                                                 {deductionCols.map(col => {
                                                     const d = record.deductions_json?.find(x => x.name === col);
                                                     return (
@@ -1500,6 +1509,9 @@ const Payroll = () => {
                                                         </td>
                                                     );
                                                 })}
+                                                <td style={{ padding: '12px 16px', fontSize: '14px', color: '#ef4444' }}>
+                                                    <div>{renderCurrency(record.advance_deductions)}</div>
+                                                </td>
                                                 <td style={{ padding: '12px 16px', fontSize: '14px', fontWeight: '600', color: '#10b981', background: '#f8fafc' }}>
                                                     <div>{renderCurrency(record.net_pay)}</div>
                                                     
@@ -1532,14 +1544,7 @@ const Payroll = () => {
                                                     <span>{(previewRecords.filter(r => r.selected).reduce((sum, r) => sum + (parseFloat(r.basic_pay || 0) + parseFloat(r.commissions || 0) + parseFloat(r.other_earnings || 0)), 0) / exchangeRate).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                                                 ) : '-'}
                                             </td>
-                                            {isUganda && <>
-                                              <td style={{ padding: '12px 16px', fontSize: '14px', fontWeight: 'bold', color: '#ef4444' }}>
-                                                {renderCurrency(previewRecords.filter(r => r.selected).reduce((sum, r) => sum + r.paye_deduction, 0))}
-                                            </td>
-                                            <td style={{ padding: '12px 16px', fontSize: '14px', fontWeight: 'bold', color: '#ef4444' }}>
-                                                {renderCurrency(previewRecords.filter(r => r.selected).reduce((sum, r) => sum + r.nssf_employee_deduction, 0))}
-                                            </td>
-                                              </>}
+
                                             {deductionCols.map(col => {
                                                 const total = previewRecords.filter(r => r.selected).reduce((sum, r) => {
                                                     const d = r.deductions_json?.find(x => x.name === col);
@@ -1547,6 +1552,9 @@ const Payroll = () => {
                                                 }, 0);
                                                 return <td key={`t_ded_${col}`} style={{ padding: '12px 16px', fontSize: '14px', fontWeight: 'bold', color: '#ef4444' }}>{renderCurrency(total)}</td>;
                                             })}
+                                            <td style={{ padding: '12px 16px', fontSize: '14px', fontWeight: 'bold', color: '#ef4444' }}>
+                                                {renderCurrency(previewRecords.filter(r => r.selected).reduce((sum, r) => sum + parseFloat(r.advance_deductions || 0), 0))}
+                                            </td>
                                             <td style={{ padding: '12px 16px', fontSize: '14px', fontWeight: 'bold', color: '#10b981' }}>
                                                 {renderCurrency(previewRecords.filter(r => r.selected).reduce((sum, r) => sum + r.net_pay, 0))}
                                             </td>

@@ -64,6 +64,9 @@ class PayslipController extends Controller
         $month = $_POST['month'];
         $year = $_POST['year'];
         $companyId = $_POST['company_id'] ?? null;
+        if ($companyId === 'undefined' || $companyId === 'null' || $companyId === '') {
+            $companyId = null;
+        }
         $file = $_FILES['document'];
 
         // File upload logic
@@ -86,11 +89,19 @@ class PayslipController extends Controller
                 if ($companyId) {
                     $stmt = $db->prepare("SELECT id, file_path FROM payslips WHERE employee_id = ? AND month = ? AND year = ? AND company_id = ?");
                     $stmt->execute([$employeeId, $month, $year, $companyId]);
+                    $existing = $stmt->fetch(\PDO::FETCH_ASSOC);
+                    
+                    // Fallback to check if a corrupted record with NULL company_id exists
+                    if (!$existing) {
+                        $stmt = $db->prepare("SELECT id, file_path FROM payslips WHERE employee_id = ? AND month = ? AND year = ? AND company_id IS NULL");
+                        $stmt->execute([$employeeId, $month, $year]);
+                        $existing = $stmt->fetch(\PDO::FETCH_ASSOC);
+                    }
                 } else {
                     $stmt = $db->prepare("SELECT id, file_path FROM payslips WHERE employee_id = ? AND month = ? AND year = ?");
                     $stmt->execute([$employeeId, $month, $year]);
+                    $existing = $stmt->fetch(\PDO::FETCH_ASSOC);
                 }
-                $existing = $stmt->fetch(\PDO::FETCH_ASSOC);
 
                 if ($existing) {
                     // Update existing record and delete old file if it's different
@@ -101,8 +112,8 @@ class PayslipController extends Controller
                             unlink($oldPath);
                         }
                     }
-                    $stmt = $db->prepare("UPDATE payslips SET file_path = ?, uploaded_by = ? WHERE id = ?");
-                    $stmt->execute([$filePath, $_SESSION['user_id'] ?? null, $existing['id']]);
+                    $stmt = $db->prepare("UPDATE payslips SET file_path = ?, uploaded_by = ?, company_id = ? WHERE id = ?");
+                    $stmt->execute([$filePath, $_SESSION['user_id'] ?? null, $companyId, $existing['id']]);
                 } else {
                     if ($companyId) {
                         $stmt = $db->prepare("INSERT INTO payslips (employee_id, company_id, month, year, file_path, uploaded_by) VALUES (?, ?, ?, ?, ?, ?)");
@@ -115,10 +126,12 @@ class PayslipController extends Controller
 
                 return $this->jsonResponse(['message' => 'Payslip uploaded successfully.']);
             } catch (\Exception $e) {
+                file_put_contents(ROOT_PATH . '/tmp/payslip_upload_error.log', date('Y-m-d H:i:s') . ' DB Error: ' . $e->getMessage() . PHP_EOL, FILE_APPEND);
                 return $this->jsonResponse(null, 500, "DB Error: " . $e->getMessage());
             }
         }
 
+        file_put_contents(ROOT_PATH . '/tmp/payslip_upload_error.log', date('Y-m-d H:i:s') . ' Failed to upload file' . PHP_EOL, FILE_APPEND);
         return $this->jsonResponse(null, 500, "Failed to upload file.");
     }
     

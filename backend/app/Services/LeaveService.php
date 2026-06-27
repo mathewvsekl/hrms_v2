@@ -94,7 +94,8 @@ class LeaveService
                    e.first_name, e.last_name,
                    lt.name as leave_type_name, lt.color_code as leave_type_color,
                    appr_u.username as approved_by_name,
-                   cn.name as country_name
+                   cn.name as country_name,
+                   ec.company_id as company_id
             FROM leave_requests lr
             JOIN employees e ON lr.employee_id = e.id
             JOIN users u ON e.id = u.employee_id
@@ -118,6 +119,87 @@ class LeaveService
         
         foreach ($results as &$r) {
             $r['origin'] = (stripos($r['remarks'] ?? '', 'System-Generated') !== false) ? 'system' : 'employee';
+
+            if ($r['status'] === 'approved') {
+                $eid = (int)$r['employee_id'];
+                $ltid = (int)$r['leave_type_id'];
+                $companyId = (int)($r['company_id'] ?? null);
+
+                if ($companyId) {
+                    $stmtPol = $db->prepare("
+                        SELECT clp.is_calendar_days 
+                        FROM company_leave_policies clp 
+                        WHERE clp.company_id = ? AND clp.leave_type_id = ?
+                    ");
+                    $stmtPol->execute([$companyId, $ltid]);
+                    $isCalendarDays = (bool)$stmtPol->fetchColumn();
+
+                    $stmtLt = $db->prepare("SELECT id, code, name FROM leave_types WHERE id = ?");
+                    $stmtLt->execute([$ltid]);
+                    $lt = $stmtLt->fetch(\PDO::FETCH_ASSOC);
+                    $validStatuses = array_filter([$lt['id'] ?? null, $lt['code'] ?? null, $lt['name'] ?? null]);
+
+                    $weekends = [];
+                    $holidays = [];
+                    if (!$isCalendarDays) {
+                        $weekends = $this->getCompanyWeekends($companyId);
+                        $yearStart = date('Y', strtotime($r['start_date']));
+                        $yearEnd = date('Y', strtotime($r['end_date']));
+
+                        $stmtH = $db->prepare("SELECT holiday_date FROM holidays WHERE company_id = ? AND (YEAR(holiday_date) = ? OR YEAR(holiday_date) = ?)");
+                        $stmtH->execute([$companyId, $yearStart, $yearEnd]);
+                        $companyHolidays = $stmtH->fetchAll(\PDO::FETCH_COLUMN);
+
+                        $stmtCntry = $db->prepare("SELECT country_id FROM companies WHERE id = ?");
+                        $stmtCntry->execute([$companyId]);
+                        $cntryId = $stmtCntry->fetchColumn();
+
+                        $pubHolidays = [];
+                        if ($cntryId) {
+                            $stmtPH = $db->prepare("SELECT holiday_date FROM public_holidays WHERE country_id = ? AND (YEAR(holiday_date) = ? OR YEAR(holiday_date) = ?)");
+                            $stmtPH->execute([$cntryId, $yearStart, $yearEnd]);
+                            $pubHolidays = $stmtPH->fetchAll(\PDO::FETCH_COLUMN);
+                        }
+                        $holidays = array_unique(array_merge($companyHolidays, $pubHolidays));
+                    }
+
+                    $stmtLogs = $db->prepare("
+                        SELECT attendance_date, status 
+                        FROM attendance_logs 
+                        WHERE employee_id = ? 
+                        AND attendance_date BETWEEN ? AND ?
+                    ");
+                    $stmtLogs->execute([$eid, $r['start_date'], $r['end_date']]);
+                    $logs = $stmtLogs->fetchAll(\PDO::FETCH_KEY_PAIR);
+
+                    $actualDays = 0.0;
+                    $current = new \DateTime($r['start_date']);
+                    $end = new \DateTime($r['end_date']);
+                    $end->modify('+1 day');
+
+                    $interval = new \DateInterval('P1D');
+                    $period = new \DatePeriod($current, $interval, $end);
+
+                    foreach ($period as $date) {
+                        $dateStr = $date->format('Y-m-d');
+                        if (isset($logs[$dateStr])) {
+                            if (in_array($logs[$dateStr], $validStatuses)) {
+                                $actualDays += 1.0;
+                            }
+                        } else {
+                            if ($isCalendarDays) {
+                                $actualDays += 1.0;
+                            } else {
+                                $dayName = $date->format('l');
+                                if (!in_array($dayName, $weekends) && !in_array($dateStr, $holidays)) {
+                                    $actualDays += 1.0;
+                                }
+                            }
+                        }
+                    }
+                    $r['total_days'] = number_format($actualDays, 2, '.', '');
+                }
+            }
         }
         unset($r);
         
@@ -165,7 +247,7 @@ class LeaveService
                 $currentRemarks = $remarks;
 
                 // 1. Check Overlap
-                $stmtOver = $db->prepare("
+                $overlapSql = "
                     SELECT id FROM leave_requests 
                     WHERE employee_id = ? 
                     AND status NOT IN ('rejected', 'cancelled', 'draft')
@@ -174,14 +256,20 @@ class LeaveService
                         (start_date <= ? AND end_date >= ?) OR
                         (start_date >= ? AND end_date <= ?)
                     )
-                ");
-                $stmtOver->execute([$employeeId, $start, $start, $end, $end, $start, $end]);
+                ";
+                $overlapParams = [$employeeId, $start, $start, $end, $end, $start, $end];
+                if ($draftId) {
+                    $overlapSql .= " AND id != ?";
+                    $overlapParams[] = (int)$draftId;
+                }
+                $stmtOver = $db->prepare($overlapSql);
+                $stmtOver->execute($overlapParams);
                 if ($stmtOver->fetch()) {
                     throw new \Exception("Overlapping leave request found for dates $start to $end.");
                 }
 
                 // 2. Gender Restriction
-                $stmtLt = $db->prepare("SELECT name, gender_restriction, is_paid FROM leave_types WHERE id = ?");
+                $stmtLt = $db->prepare("SELECT id, code, name, gender_restriction, is_paid FROM leave_types WHERE id = ?");
                 $stmtLt->execute([$ltid]);
                 $leaveType = $stmtLt->fetch(\PDO::FETCH_ASSOC);
 
@@ -213,6 +301,25 @@ class LeaveService
                     $stmtDef = $db->prepare("SELECT default_days_per_year FROM company_leave_policies WHERE company_id = ? AND leave_type_id = ?");
                     $stmtDef->execute([$companyId, $ltid]);
                     $remaining = $stmtDef->fetchColumn() ?: 0;
+                } else {
+                    // Exclude logs falling within this request's dates from used days to avoid double counting
+                    $validStatuses = [];
+                    if ($leaveType) {
+                        $validStatuses = array_filter([$leaveType['id'], $leaveType['code'], $leaveType['name']]);
+                    }
+                    if (!empty($validStatuses)) {
+                        $placeholders = implode(',', array_fill(0, count($validStatuses), '?'));
+                        $stmtLogsCount = $db->prepare("
+                            SELECT COUNT(DISTINCT attendance_date) 
+                            FROM attendance_logs 
+                            WHERE employee_id = ? 
+                            AND status IN ($placeholders)
+                            AND attendance_date BETWEEN ? AND ?
+                        ");
+                        $stmtLogsCount->execute(array_merge([$employeeId], $validStatuses, [$start, $end]));
+                        $overlappingLogs = (int)$stmtLogsCount->fetchColumn();
+                        $remaining = (float)$remaining + $overlappingLogs;
+                    }
                 }
 
                 $isPaid = $leaveType ? (bool)$leaveType['is_paid'] : true;
@@ -757,14 +864,15 @@ class LeaveService
                                 $currentGroup['end_date'] = $date;
                                 $currentGroup['log_ids'][] = $log['log_id'];
                             } else {
-                                // Check if employee has returned to work
+                                // Check if employee has returned to work (has a log after the end_date that is NOT a leave status)
+                                $placeholders = implode(',', array_fill(0, count($codesList), '?'));
                                 $stmtReturn = $db->prepare("
                                     SELECT 1 FROM attendance_logs 
                                     WHERE employee_id = ? AND attendance_date > ? 
-                                    AND status IN ('present', 'work_from_home')
+                                    AND status NOT IN ($placeholders)
                                     LIMIT 1
                                 ");
-                                $stmtReturn->execute([$currentGroup['employee_id'], $currentGroup['end_date']]);
+                                $stmtReturn->execute(array_merge([$currentGroup['employee_id'], $currentGroup['end_date']], $codesList));
                                 if ($stmtReturn->fetch()) {
                                     $this->saveDraftLeaveGroup($currentGroup);
                                     $draftsCreated++;
@@ -784,14 +892,15 @@ class LeaveService
                     }
                 }
                 if ($currentGroup) {
-                    // Check if employee has returned to work
+                    // Check if employee has returned to work (has a log after the end_date that is NOT a leave status)
+                    $placeholders = implode(',', array_fill(0, count($codesList), '?'));
                     $stmtReturn = $db->prepare("
                         SELECT 1 FROM attendance_logs 
                         WHERE employee_id = ? AND attendance_date > ? 
-                        AND status IN ('present', 'work_from_home')
+                        AND status NOT IN ($placeholders)
                         LIMIT 1
                     ");
-                    $stmtReturn->execute([$currentGroup['employee_id'], $currentGroup['end_date']]);
+                    $stmtReturn->execute(array_merge([$currentGroup['employee_id'], $currentGroup['end_date']], $codesList));
                     if ($stmtReturn->fetch()) {
                         $this->saveDraftLeaveGroup($currentGroup);
                         $draftsCreated++;

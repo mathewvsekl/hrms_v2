@@ -202,7 +202,7 @@ class AppraisalController extends Controller
         try {
             $this->db->beginTransaction();
 
-            $stmtEmp = $this->db->prepare("SELECT ea.employee_id, ea.status, e.reporting_manager_id FROM employee_appraisals ea JOIN employees e ON ea.employee_id = e.id WHERE ea.id = ?");
+            $stmtEmp = $this->db->prepare("SELECT ea.employee_id, ea.status FROM employee_appraisals ea WHERE ea.id = ?");
             $stmtEmp->execute([$id]);
             $appraisal = $stmtEmp->fetch(\PDO::FETCH_ASSOC);
             if (!$appraisal) {
@@ -212,17 +212,30 @@ class AppraisalController extends Controller
 
             $isGlobalAdmin = \App\Middleware\RoleMiddleware::hasPermission('Appraisals', 'approve');
             
-            if (!$isGlobalAdmin) {
-                $stmtCheck = $this->db->prepare("SELECT id FROM appraisal_approvals WHERE appraisal_id = ? AND approver_id = ? AND status = 'pending'");
+            if ($isGlobalAdmin) {
+                // Admin override: Find the active pending step
+                $stmtPending = $this->db->prepare("SELECT id FROM appraisal_approvals WHERE appraisal_id = ? AND status = 'pending' ORDER BY step_order ASC LIMIT 1");
+                $stmtPending->execute([$id]);
+                $pendingId = $stmtPending->fetchColumn();
+
+                if ($pendingId) {
+                    $stmtAppr = $this->db->prepare("UPDATE appraisal_approvals SET status = 'approved', comment = ? WHERE id = ?");
+                    $stmtAppr->execute(["(Admin approved) " . $comment, $pendingId]);
+                }
+            } else {
+                // Standard Approver: Check if there is an active pending approval assigned to this user
+                $stmtCheck = $this->db->prepare("SELECT id FROM appraisal_approvals WHERE appraisal_id = ? AND approver_id = ? AND status = 'pending' LIMIT 1");
                 $stmtCheck->execute([$id, $user['employee_id']]);
-                if (!$stmtCheck->fetchColumn() && !($appraisal['reporting_manager_id'] == $user['employee_id'] && $appraisal['status'] === 'l1_review')) {
+                $approvalId = $stmtCheck->fetchColumn();
+
+                if (!$approvalId) {
                     $this->db->rollBack();
-                    return $this->jsonResponse(null, 403, 'Forbidden: You are not authorized to approve this appraisal.');
+                    return $this->jsonResponse(null, 403, 'Forbidden: You are not authorized to approve this appraisal at this step.');
                 }
                 
-                // Mark approval as approved
-                $stmtAppr = $this->db->prepare("UPDATE appraisal_approvals SET status = 'approved', comment = ? WHERE appraisal_id = ? AND approver_id = ? AND status = 'pending'");
-                $stmtAppr->execute([$comment, $id, $user['employee_id']]);
+                // Mark as approved
+                $stmtAppr = $this->db->prepare("UPDATE appraisal_approvals SET status = 'approved', comment = ? WHERE id = ?");
+                $stmtAppr->execute([$comment, $approvalId]);
             }
 
             $service = new \App\Services\AppraisalService();
@@ -814,6 +827,113 @@ class AppraisalController extends Controller
 
             $this->db->prepare("DELETE FROM employee_appraisals WHERE id = ?")->execute([$id]);
             return $this->jsonResponse(null, 200, 'Appraisal deleted successfully');
+        } catch (\Exception $e) {
+            return $this->jsonResponse(null, 500, $e->getMessage());
+        }
+    }
+
+    /**
+     * Calibrate appraisal ratings (HR Calibration)
+     */
+    public function calibrateRatings($id, $data)
+    {
+        $user = \App\Middleware\AuthMiddleware::getUser();
+        if (!$user) {
+            return $this->jsonResponse(null, 401, 'Unauthorized');
+        }
+
+        // Require 'approve' permission (or custom calibrate checking)
+        if (!\App\Middleware\RoleMiddleware::hasPermission('Appraisals', 'approve')) {
+            return $this->jsonResponse(null, 403, 'Forbidden: You do not have permission to calibrate ratings.');
+        }
+
+        try {
+            $service = new \App\Services\AppraisalService();
+            $data['appraisal_id'] = (int)$id;
+            $service->calibrateRatings($data, $user);
+            return $this->jsonResponse(null, 200, 'Ratings calibrated successfully.');
+        } catch (\Exception $e) {
+            $code = $e->getCode();
+            $code = (is_numeric($code) && $code >= 100 && $code <= 599) ? (int)$code : 500;
+            return $this->jsonResponse(null, $code, $e->getMessage());
+        }
+    }
+
+    /**
+     * Submit a formal reopen request
+     */
+    public function requestReopen($id, $data)
+    {
+        $user = \App\Middleware\AuthMiddleware::getUser();
+        if (!$user) {
+            return $this->jsonResponse(null, 401, 'Unauthorized');
+        }
+
+        $reason = $data['reason'] ?? null;
+        if (empty($reason)) {
+            return $this->jsonResponse(null, 400, 'Reason is mandatory.');
+        }
+
+        try {
+            $service = new \App\Services\AppraisalService();
+            $service->requestReopen((int)$id, $reason, $user);
+            return $this->jsonResponse(null, 200, 'Reopen request submitted successfully.');
+        } catch (\Exception $e) {
+            $code = $e->getCode();
+            $code = (is_numeric($code) && $code >= 100 && $code <= 599) ? (int)$code : 500;
+            return $this->jsonResponse(null, $code, $e->getMessage());
+        }
+    }
+
+    /**
+     * Decide on a pending reopen request
+     */
+    public function decideReopenRequest($requestId, $data)
+    {
+        $user = \App\Middleware\AuthMiddleware::getUser();
+        if (!$user) {
+            return $this->jsonResponse(null, 401, 'Unauthorized');
+        }
+
+        if (!\App\Middleware\RoleMiddleware::hasPermission('Appraisals', 'approve')) {
+            return $this->jsonResponse(null, 403, 'Forbidden: You do not have permission to approve/reject reopen requests.');
+        }
+
+        $decision = $data['decision'] ?? null;
+        if (empty($decision)) {
+            return $this->jsonResponse(null, 400, 'Decision is mandatory (APPROVED or REJECTED).');
+        }
+
+        try {
+            $service = new \App\Services\AppraisalService();
+            $service->decideReopenRequest((int)$requestId, $decision, $user);
+            return $this->jsonResponse(null, 200, 'Reopen request status updated to ' . $decision);
+        } catch (\Exception $e) {
+            $code = $e->getCode();
+            $code = (is_numeric($code) && $code >= 100 && $code <= 599) ? (int)$code : 500;
+            return $this->jsonResponse(null, $code, $e->getMessage());
+        }
+    }
+
+    /**
+     * List reopen requests
+     */
+    public function listReopenRequests()
+    {
+        $user = \App\Middleware\AuthMiddleware::getUser();
+        if (!$user) {
+            return $this->jsonResponse(null, 401, 'Unauthorized');
+        }
+
+        if (!\App\Middleware\RoleMiddleware::hasPermission('Appraisals', 'approve')) {
+            return $this->jsonResponse(null, 403, 'Forbidden: You do not have permission to view reopen requests.');
+        }
+
+        try {
+            $service = new \App\Services\AppraisalService();
+            $status = $_GET['status'] ?? 'PENDING';
+            $requests = $service->listReopenRequests($status);
+            return $this->jsonResponse($requests);
         } catch (\Exception $e) {
             return $this->jsonResponse(null, 500, $e->getMessage());
         }

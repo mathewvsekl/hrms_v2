@@ -294,7 +294,7 @@ CREATE TABLE `attendance_audit_logs` (
   KEY `changed_by_id` (`changed_by_id`),
   CONSTRAINT `attendance_audit_logs_ibfk_1` FOREIGN KEY (`attendance_log_id`) REFERENCES `attendance_logs` (`id`) ON DELETE CASCADE,
   CONSTRAINT `attendance_audit_logs_ibfk_2` FOREIGN KEY (`changed_by_id`) REFERENCES `users` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=2084 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=2088 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 CREATE TABLE `attendance_logs` (
   `id` int NOT NULL AUTO_INCREMENT,
@@ -324,7 +324,7 @@ CREATE TABLE `attendance_logs` (
   CONSTRAINT `attendance_logs_ibfk_1` FOREIGN KEY (`employee_id`) REFERENCES `employees` (`id`),
   CONSTRAINT `attendance_logs_ibfk_2` FOREIGN KEY (`submitted_by_id`) REFERENCES `users` (`id`) ON DELETE SET NULL,
   CONSTRAINT `attendance_logs_ibfk_3` FOREIGN KEY (`approved_by_id`) REFERENCES `users` (`id`) ON DELETE SET NULL
-) ENGINE=InnoDB AUTO_INCREMENT=1805 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=1809 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 CREATE TABLE `attendance_policies` (
   `id` int NOT NULL AUTO_INCREMENT,
@@ -357,7 +357,7 @@ CREATE TABLE `audit_logs` (
   KEY `idx_audit_action` (`action`),
   KEY `idx_audit_module` (`module`),
   KEY `idx_audit_entity` (`entity_type`,`entity_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=374 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 CREATE TABLE `companies` (
   `id` int NOT NULL AUTO_INCREMENT,
@@ -823,7 +823,7 @@ CREATE TABLE `payroll_records` (
   CONSTRAINT `payroll_records_ibfk_1` FOREIGN KEY (`employee_id`) REFERENCES `employees` (`id`) ON DELETE CASCADE,
   CONSTRAINT `payroll_records_chk_1` CHECK (json_valid(`earnings_json`)),
   CONSTRAINT `payroll_records_chk_2` CHECK (json_valid(`deductions_json`))
-) ENGINE=InnoDB AUTO_INCREMENT=42 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=155 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 CREATE TABLE `payroll_runs` (
   `id` int NOT NULL AUTO_INCREMENT,
@@ -848,7 +848,7 @@ CREATE TABLE `payslips` (
   `uploaded_by` int DEFAULT NULL,
   `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=68 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 CREATE TABLE `permissions` (
   `id` int NOT NULL AUTO_INCREMENT,
@@ -899,7 +899,7 @@ CREATE TABLE `salary_advance_installments` (
   `remaining_balance` decimal(15,2) DEFAULT NULL,
   `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=14 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE `salary_advances` (
   `id` int NOT NULL AUTO_INCREMENT,
@@ -925,7 +925,7 @@ CREATE TABLE `salary_advances` (
   KEY `deducted_in_payroll_id` (`deducted_in_payroll_id`),
   CONSTRAINT `salary_advances_ibfk_1` FOREIGN KEY (`employee_id`) REFERENCES `employees` (`id`) ON DELETE CASCADE,
   CONSTRAINT `salary_advances_ibfk_2` FOREIGN KEY (`deducted_in_payroll_id`) REFERENCES `payroll_records` (`id`) ON DELETE SET NULL
-) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 CREATE TABLE `salary_structures` (
   `id` int NOT NULL AUTO_INCREMENT,

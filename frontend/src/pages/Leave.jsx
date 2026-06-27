@@ -1522,17 +1522,17 @@ const RequestsTab = ({ user, onPreview }) => {
         setSelectedRequest(request);
         setEditMode(false);
         setShowPreviewModal(true);
-        if (request.status === 'draft') {
-            try {
-                const res = await api.get(`/leave/types?employee_id=${request.employee_id}`);
-                setLeaveTypes(res.data?.data || res.data || []);
+        try {
+            const res = await api.get(`/leave/types?employee_id=${request.employee_id}`);
+            setLeaveTypes(res.data?.data || res.data || []);
+            if (request.status === 'draft') {
                 setEditForm({
                     leave_type_id: request.leave_type_id?.toString() || '',
                     start_date: request.start_date.substring(0, 10),
                     end_date: request.end_date.substring(0, 10)
                 });
-            } catch (e) { console.error(e); }
-        }
+            }
+        } catch (e) { console.error(e); }
     };
 
     const handlePreview = async () => {

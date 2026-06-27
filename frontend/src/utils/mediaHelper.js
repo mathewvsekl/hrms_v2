@@ -7,9 +7,15 @@ export const getSecureMediaUrl = (filename) => {
     if (!filename) return '/assets/placeholders/avatar-default.png';
     const token = localStorage.getItem('hrms_auth_token') || '';
     
-    // Check if the filename is already a full URL, blob, or already formatted
-    if (filename.startsWith('http') || filename.startsWith('blob:') || filename.startsWith('/api/media')) {
+    // Check if the filename is already a full URL or blob
+    if (filename.startsWith('http') || filename.startsWith('blob:')) {
         return filename;
+    }
+    
+    // If it's already an API endpoint, just append the token
+    if (filename.startsWith('/api/')) {
+        const separator = filename.includes('?') ? '&' : '?';
+        return `${filename}${separator}token=${encodeURIComponent(token)}`;
     }
     
     return `/api/media?file=${encodeURIComponent(filename)}&token=${encodeURIComponent(token)}`;

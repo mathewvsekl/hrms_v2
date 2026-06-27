@@ -208,7 +208,7 @@ const AppraisalForm = () => {
 
     return (
         <div className="appraisal-detail">
-            <div style={{fontSize: '10px', color: 'red'}}>DEBUG: user.id={user?.id}, user.employee_id={user?.employee_id}, user.role={user?.role}, appraisal.employee_id={appraisal.employee_id}</div>
+
             <div className="header-actions" style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end', marginBottom: '24px' }}>
                 <button className="btn btn-secondary" onClick={() => onSave()} disabled={saving || appraisal.status === 'finalized'}>
                     <Save size={18} /> {saving ? 'Saving...' : 'Save Draft'}

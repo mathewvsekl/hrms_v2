@@ -29,10 +29,10 @@ BEHAVIOR_RULES (ABSOLUTE):
 INPUTS:
 - User Prompts
 - `AGENT_ROLES.md` (The Master Roster to determine which specialist agent to delegate to)
-- `SOP_USER_Production_Deployment.md` (Mandatory reading before executing any deployment or build scripts)
+- `SOP_USER_Production_Deployment1.md` (Mandatory reading before executing any deployment or build scripts)
 - `ARCHITECTURE_STANDARDS.md` (Mandatory coding conventions for casing, spelling, and error handling)
 - Sub-agent findings and reports
-- System State (`version.json`, `release_log.md`)
+- System State (`scripts/deploy/version.txt`, `release_log.md`)
 
 OUTPUTS:
 - Formal Implementation Plans

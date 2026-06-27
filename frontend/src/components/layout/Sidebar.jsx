@@ -15,7 +15,8 @@ import {
     ChevronRight,
     User,
     Package,
-    Banknote
+    Banknote,
+    Plane
 } from 'lucide-react';
 import useAuthStore from '../../store/useAuthStore';
 import api from '../../services/api';
@@ -73,6 +74,7 @@ const Sidebar = ({ isOpen }) => {
             items: [
                 { name: 'My Portal', path: '/portal', icon: <LayoutDashboard size={18} /> },
                 { name: 'My Profile', path: '/employee-profile', icon: <User size={18} /> },
+                { name: 'My Travel', path: '/travel', icon: <Plane size={18} /> },
                 { name: 'Directory', path: '/employees', icon: <Users size={18} /> },
             ]
         },
@@ -81,6 +83,7 @@ const Sidebar = ({ isOpen }) => {
             items: [
                 { name: 'Attendance', path: '/attendance', icon: <Clock size={18} />, module: 'attendance' },
                 { name: 'Leave', path: '/leave', icon: <Calendar size={18} />, module: 'leave' },
+                { name: 'Travel Requests', path: '/travel', icon: <Plane size={18} />, module: 'travel' },
                 { name: 'Appraisals', path: '/appraisals', icon: <BarChart size={18} />, module: 'appraisals' },
             ]
         },

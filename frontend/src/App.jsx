@@ -36,6 +36,7 @@ import Policies from './pages/Policies';
 import NotFound from './pages/NotFound';
 import EmployeeAssets from './pages/EmployeeAssets';
 import ActionRequired from './pages/ActionRequired';
+import Travel from './pages/Travel';
 
 import useNotificationStore from './store/useNotificationStore';
 
@@ -146,6 +147,7 @@ function App() {
             <Route path="/notifications" element={<Notifications />} />
             <Route path="/action-required" element={<ActionRequired />} />
             <Route path="/policies" element={<Policies />} />
+            <Route path="/travel" element={<Travel />} />
             
             {/* Catch-all 404 inside layout */}
             <Route path="*" element={<NotFound />} />

@@ -393,6 +393,9 @@ class AppraisalService
             ]);
             $cycleId = $db->lastInsertId();
 
+            // Snapshot global matrix, fallback, and escalation rules for this cycle
+            $this->snapshotConfiguration((int)$cycleId, array_map('intval', $data['office_ids']));
+
             // 1. Fetch Global Settings
             $stmtGlobal = $db->query("SELECT setting_value FROM appraisal_system_settings WHERE setting_key = 'default_min_kpis'");
             $globalMinKpis = (int)($stmtGlobal->fetchColumn() ?: 3);
@@ -404,6 +407,10 @@ class AppraisalService
                 $deptReqs[$row['department_id']] = (int)$row['min_kpis'];
             }
 
+            if (empty($data['office_ids'])) {
+                throw new \Exception("Please select at least one Target Company to initiate the appraisal cycle.");
+            }
+            
             $officeCsv = implode(',', array_map('intval', $data['office_ids']));
             $sql = "SELECT e.id, e.reporting_manager_id, e.department_id FROM employees e 
                     JOIN employee_companies ec ON e.id = ec.employee_id AND ec.is_active = 1 AND ec.is_primary = 1
@@ -411,7 +418,11 @@ class AppraisalService
             $employees = $db->query($sql)->fetchAll(\PDO::FETCH_ASSOC);
 
             foreach ($employees as $emp) {
-                $stmtAppr = $db->prepare("INSERT INTO employee_appraisals (employee_id, manager_id, cycle_id, template_id, status) VALUES (?, ?, ?, ?, 'draft')");
+                // Initialize appraisal in 'draft' status with current pointers set to NULL/0
+                $stmtAppr = $db->prepare("
+                    INSERT INTO employee_appraisals (employee_id, manager_id, cycle_id, template_id, status, current_approval_step_id, current_step_order) 
+                    VALUES (?, ?, ?, ?, 'draft', NULL, 0)
+                ");
                 $stmtAppr->execute([$emp['id'], $emp['reporting_manager_id'], $cycleId, $data['template_id']]);
                 $appraisalId = $db->lastInsertId();
 
@@ -436,18 +447,6 @@ class AppraisalService
                     $db->prepare("INSERT INTO appraisal_ratings (appraisal_id, kra_name) VALUES (?, '')")->execute([$appraisalId]);
                     $kpiCount++;
                 }
-
-                // Matrix Approvals
-                if ($emp['reporting_manager_id']) {
-                    $db->prepare("INSERT INTO appraisal_approvals (appraisal_id, approver_id, status) VALUES (?, ?, 'pending')")->execute([$appraisalId, $emp['reporting_manager_id']]);
-                    
-                    $stmtHOD = $db->prepare("SELECT reporting_manager_id FROM employees WHERE id = ?");
-                    $stmtHOD->execute([$emp['reporting_manager_id']]);
-                    $hodId = $stmtHOD->fetchColumn();
-                    if ($hodId && $hodId != $emp['reporting_manager_id']) {
-                        $db->prepare("INSERT INTO appraisal_approvals (appraisal_id, approver_id, status) VALUES (?, ?, 'pending')")->execute([$appraisalId, $hodId]);
-                    }
-                }
             }
 
             $db->commit();
@@ -455,6 +454,71 @@ class AppraisalService
         } catch (\Exception $e) {
             $db->rollBack();
             throw $e;
+        }
+    }
+
+    /**
+     * Snapshot global configurations into cycle-specific tables for historical isolation.
+     */
+    private function snapshotConfiguration(int $cycleId, array $companyIds): void
+    {
+        $db = \Database::getInstance()->getConnection();
+
+        foreach ($companyIds as $companyId) {
+            // 1. Snapshot Approval Matrices
+            $stmtMatrices = $db->prepare("SELECT step_order, role_required FROM appraisal_approval_matrices WHERE company_id = ? ORDER BY step_order ASC");
+            $stmtMatrices->execute([$companyId]);
+            $matrices = $stmtMatrices->fetchAll(\PDO::FETCH_ASSOC);
+
+            // If empty, populate a default matrix: 1: L1_MANAGER, 2: DEPARTMENT_HEAD, 3: HR_MANAGER
+            if (empty($matrices)) {
+                $matrices = [
+                    ['step_order' => 1, 'role_required' => 'L1_MANAGER'],
+                    ['step_order' => 2, 'role_required' => 'DEPARTMENT_HEAD'],
+                    ['step_order' => 3, 'role_required' => 'HR_MANAGER']
+                ];
+            }
+
+            $stmtInsMatrix = $db->prepare("INSERT INTO snapshot_approval_matrices (cycle_id, company_id, step_order, role_required) VALUES (?, ?, ?, ?)");
+            foreach ($matrices as $m) {
+                $stmtInsMatrix->execute([$cycleId, $companyId, $m['step_order'], $m['role_required']]);
+            }
+
+            // 2. Snapshot Fallback Hierarchies
+            $stmtFallback = $db->prepare("SELECT sequence_order, role FROM appraisal_fallback_hierarchies WHERE company_id = ? ORDER BY sequence_order ASC");
+            $stmtFallback->execute([$companyId]);
+            $fallbacks = $stmtFallback->fetchAll(\PDO::FETCH_ASSOC);
+
+            if (empty($fallbacks)) {
+                $fallbacks = [
+                    ['sequence_order' => 1, 'role' => 'L1_MANAGER'],
+                    ['sequence_order' => 2, 'role' => 'L2_MANAGER'],
+                    ['sequence_order' => 3, 'role' => 'DEPARTMENT_HEAD'],
+                    ['sequence_order' => 4, 'role' => 'HR_MANAGER'],
+                    ['sequence_order' => 5, 'role' => 'SUPER_ADMIN']
+                ];
+            }
+
+            $stmtInsFallback = $db->prepare("INSERT INTO snapshot_fallback_hierarchies (cycle_id, company_id, sequence_order, role) VALUES (?, ?, ?, ?)");
+            foreach ($fallbacks as $f) {
+                $stmtInsFallback->execute([$cycleId, $companyId, $f['sequence_order'], $f['role']]);
+            }
+
+            // 3. Snapshot Escalation Rules
+            $stmtEscalation = $db->prepare("SELECT sla_hours, escalation_role FROM appraisal_escalation_rules WHERE company_id = ?");
+            $stmtEscalation->execute([$companyId]);
+            $escalations = $stmtEscalation->fetchAll(\PDO::FETCH_ASSOC);
+
+            if (empty($escalations)) {
+                $escalations = [
+                    ['sla_hours' => 48, 'escalation_role' => 'HR_MANAGER']
+                ];
+            }
+
+            $stmtInsEscalation = $db->prepare("INSERT INTO snapshot_escalation_rules (cycle_id, company_id, sla_hours, escalation_role) VALUES (?, ?, ?, ?)");
+            foreach ($escalations as $e) {
+                $stmtInsEscalation->execute([$cycleId, $companyId, $e['sla_hours'], $e['escalation_role']]);
+            }
         }
     }
 
@@ -466,71 +530,138 @@ class AppraisalService
     public function advanceWorkflow(int $appraisalId, string $currentStatus, ?string $comments = null): string
     {
         $db = \Database::getInstance()->getConnection();
-        
-        // Get Employee & L1 Manager
+        $routingEngine = new \App\Services\AppraisalRoutingEngine();
+
+        // 1. Fetch appraisal info
         $stmt = $db->prepare("
-            SELECT ea.employee_id, ec.company_id, e.reporting_manager_id as l1 
-            FROM employee_appraisals ea 
+            SELECT ea.id, ea.employee_id, ea.cycle_id, ea.status, 
+                   ea.current_approval_step_id, ea.current_step_order,
+                   ec.company_id
+            FROM employee_appraisals ea
             JOIN employees e ON ea.employee_id = e.id
             LEFT JOIN employee_companies ec ON e.id = ec.employee_id AND ec.is_primary = 1 AND ec.is_active = 1
             WHERE ea.id = ?
         ");
         $stmt->execute([$appraisalId]);
-        $data = $stmt->fetch(\PDO::FETCH_ASSOC);
-        if (!$data) throw new \Exception("Appraisal not found");
+        $appraisal = $stmt->fetch(\PDO::FETCH_ASSOC);
 
-        $l1 = $data['l1'] ? (int)$data['l1'] : null;
-        $l2 = null;
-        $l3 = null;
-
-        if ($l1) {
-            $stmtL2 = $db->prepare("SELECT reporting_manager_id FROM employees WHERE id = ?");
-            $stmtL2->execute([$l1]);
-            $l2 = $stmtL2->fetchColumn();
-            $l2 = $l2 ? (int)$l2 : null;
+        if (!$appraisal) {
+            throw new \Exception("Appraisal not found");
         }
 
-        if ($l2) {
-            $stmtL3 = $db->prepare("SELECT reporting_manager_id FROM employees WHERE id = ?");
-            $stmtL3->execute([$l2]);
-            $l3 = $stmtL3->fetchColumn();
-            $l3 = $l3 ? (int)$l3 : null;
+        $employeeId = (int)$appraisal['employee_id'];
+        $cycleId = (int)$appraisal['cycle_id'];
+        $companyId = (int)($appraisal['company_id'] ?? 1);
+        $currentStepOrder = (int)$appraisal['current_step_order'];
+
+        // Determine if we are starting from draft/returned or advancing from in-progress/calibration
+        if ($appraisal['status'] === 'draft' || $appraisal['status'] === 'returned') {
+            $nextStepOrder = 1;
+        } else {
+            $nextStepOrder = $currentStepOrder + 1;
         }
 
-        $nextStatus = $this->determineNextStatus($currentStatus);
-
-        // Auto-Skip Logic
         while (true) {
-            if ($nextStatus === 'l1_review' && !$l1) {
-                $nextStatus = $this->determineNextStatus($nextStatus);
-            } else if ($nextStatus === 'l2_review' && !$l2) {
-                $nextStatus = $this->determineNextStatus($nextStatus);
-            } else if ($nextStatus === 'l3_review' && !$l3) {
-                $nextStatus = $this->determineNextStatus($nextStatus);
-            } else {
-                break; // Found an active tier
+            // Find the next step in snapshot approval matrix
+            $stmtStep = $db->prepare("
+                SELECT id, role_required 
+                FROM snapshot_approval_matrices 
+                WHERE cycle_id = ? AND company_id = ? AND step_order = ?
+            ");
+            $stmtStep->execute([$cycleId, $companyId, $nextStepOrder]);
+            $nextStep = $stmtStep->fetch(\PDO::FETCH_ASSOC);
+
+            if (!$nextStep) {
+                // No more steps -> completed
+                $db->prepare("
+                    UPDATE employee_appraisals 
+                    SET status = 'completed', current_approval_step_id = NULL, current_step_order = 0 
+                    WHERE id = ?
+                ")->execute([$appraisalId]);
+
+                \App\Helpers\ApprovalHelper::log('appraisal', $appraisalId, 'completed', $comments ?: "Workflow completed.");
+                
+                // Dispatch final completion event
+                $this->dispatchWorkflowEvent($appraisalId, 'WORKFLOW_COMPLETED', [
+                    'finalized_by' => 'system',
+                    'reason' => 'All matrix steps completed.'
+                ]);
+
+                return 'completed';
             }
+
+            // Resolve the actor for this step
+            try {
+                $approverId = $routingEngine->resolveApprover($appraisalId, $nextStep['role_required']);
+            } catch (\Exception $e) {
+                error_log("AppraisalService routing error: " . $e->getMessage() . ". Using fallback routing rules.");
+                // If it fails, default to Admin
+                $approverId = null;
+            }
+
+            // Auto-skip check: if the resolved approver is the employee themselves
+            if ($approverId === $employeeId) {
+                error_log("AppraisalService: Auto-skipping step $nextStepOrder (" . $nextStep['role_required'] . ") for appraisal $appraisalId to prevent self-approval.");
+                \App\Helpers\ApprovalHelper::log('appraisal', $appraisalId, 'approved', "System auto-skipped step $nextStepOrder (" . $nextStep['role_required'] . ") to prevent self-approval.");
+                
+                $nextStepOrder++;
+                continue; // Loop to evaluate the next step
+            }
+
+            // Determine appropriate status based on step role (HR roles go to 'calibration', otherwise 'in_progress')
+            $roleUpper = strtoupper($nextStep['role_required']);
+            $isHR = in_array($roleUpper, ['HR_BP', 'HR_MANAGER', 'HR_ADMIN', 'HR_HEAD', 'CHRO']);
+            $nextStatus = $isHR ? 'calibration' : 'in_progress';
+
+            // Update appraisal pointers and status
+            $db->prepare("
+                UPDATE employee_appraisals 
+                SET status = ?, current_approval_step_id = ?, current_step_order = ? 
+                WHERE id = ?
+            ")->execute([$nextStatus, $nextStep['id'], $nextStepOrder, $appraisalId]);
+
+            // Add pending approval record
+            // First clear any previous pending approvals for this step order to avoid duplicates
+            $db->prepare("DELETE FROM appraisal_approvals WHERE appraisal_id = ? AND step_order = ?")->execute([$appraisalId, $nextStepOrder]);
+            
+            $db->prepare("
+                INSERT INTO appraisal_approvals (appraisal_id, approver_id, status, step_order) 
+                VALUES (?, ?, 'pending', ?)
+            ")->execute([$appraisalId, $approverId, $nextStepOrder]);
+
+            // Log the transition
+            \App\Helpers\ApprovalHelper::log('appraisal', $appraisalId, $nextStatus, $comments ?: "Workflow advanced to step $nextStepOrder (" . $nextStep['role_required'] . ").");
+
+            // Dispatch workflow event
+            $this->dispatchWorkflowEvent($appraisalId, 'WORKFLOW_STEP_REACHED', [
+                'step_order' => $nextStepOrder,
+                'role_required' => $nextStep['role_required'],
+                'approver_id' => $approverId,
+                'status' => $nextStatus
+            ]);
+
+            return $nextStatus;
         }
-
-        // Update Appraisal Status
-        $stmtUp = $db->prepare("UPDATE employee_appraisals SET status = ? WHERE id = ?");
-        $stmtUp->execute([$nextStatus, $appraisalId]);
-
-        // Log the transition
-        ApprovalHelper::log('appraisal', $appraisalId, $nextStatus, $comments ?: "Workflow advanced to {$nextStatus}");
-
-        return $nextStatus;
     }
 
-    private function determineNextStatus(string $current): string
+    /**
+     * Dispatch an event to the workflow_events log.
+     */
+    public function dispatchWorkflowEvent(int $appraisalId, string $eventType, array $payload): void
     {
-        switch ($current) {
-            case 'draft': return 'l1_review';
-            case 'l1_review': return 'l2_review';
-            case 'l2_review': return 'l3_review';
-            case 'l3_review': return 'hr_calibration';
-            case 'hr_calibration': return 'finalized';
-            default: return 'finalized';
+        try {
+            $db = \Database::getInstance()->getConnection();
+            $stmt = $db->prepare("
+                INSERT INTO workflow_events (appraisal_id, event_type, payload, dispatched_at_utc) 
+                VALUES (?, ?, ?, CURRENT_TIMESTAMP)
+            ");
+            $stmt->execute([
+                $appraisalId,
+                $eventType,
+                json_encode($payload)
+            ]);
+        } catch (\Exception $e) {
+            error_log("Failed to dispatch workflow event: " . $e->getMessage());
         }
     }
 
@@ -711,5 +842,231 @@ class AppraisalService
         $stmt->execute([$appraisalId]);
 
         return ['status' => 'success', 'message' => 'Letter acknowledged successfully.'];
+    }
+
+    /**
+     * Calibrate Ratings: Atomic update of calibrated/final ratings with audit ledger logging.
+     */
+    public function calibrateRatings(array $data, array $userData): void
+    {
+        $db = \Database::getInstance()->getConnection();
+        $appraisalId = (int)$data['appraisal_id'];
+        $justification = $data['justification'] ?? null;
+        $ratings = $data['ratings'] ?? [];
+
+        if (empty($justification)) {
+            throw new \Exception("Calibration requires a mandatory justification string.", 400);
+        }
+
+        $db->beginTransaction();
+        try {
+            // Verify appraisal status & existence
+            $stmtCheck = $db->prepare("SELECT status FROM employee_appraisals WHERE id = ?");
+            $stmtCheck->execute([$appraisalId]);
+            $appraisalStatus = $stmtCheck->fetchColumn();
+
+            if (!$appraisalStatus) {
+                throw new \Exception("Appraisal not found.", 404);
+            }
+
+            if ($appraisalStatus === 'finalized') {
+                throw new \Exception("Cannot calibrate a finalized appraisal.", 403);
+            }
+
+            // Loop through ratings and update them
+            foreach ($ratings as $r) {
+                $ratingId = (int)$r['rating_id'];
+                
+                // Fetch the old rating values for comparison/audit log
+                $stmtOld = $db->prepare("SELECT hr_calibrated_rating, final_rating FROM appraisal_ratings WHERE id = ? AND appraisal_id = ?");
+                $stmtOld->execute([$ratingId, $appraisalId]);
+                $oldRatings = $stmtOld->fetch(\PDO::FETCH_ASSOC);
+
+                if (!$oldRatings) {
+                    throw new \Exception("Rating record not found for ID $ratingId.", 404);
+                }
+
+                $updates = [];
+                $params = [];
+
+                if (array_key_exists('hr_calibrated_rating', $r)) {
+                    $updates[] = "hr_calibrated_rating = ?";
+                    $params[] = $r['hr_calibrated_rating'];
+                }
+                if (array_key_exists('final_rating', $r)) {
+                    $updates[] = "final_rating = ?";
+                    $params[] = $r['final_rating'];
+                }
+
+                if (!empty($updates)) {
+                    $params[] = $ratingId;
+                    $stmtUpdate = $db->prepare("UPDATE appraisal_ratings SET " . implode(', ', $updates) . " WHERE id = ?");
+                    $stmtUpdate->execute($params);
+
+                    // Insert audit record
+                    $oldRatingVal = $oldRatings['hr_calibrated_rating'];
+                    $newRatingVal = $r['hr_calibrated_rating'] ?? $oldRatingVal;
+                    if (isset($r['final_rating'])) {
+                        $oldRatingVal = $oldRatings['final_rating'] ?? $oldRatings['hr_calibrated_rating'];
+                        $newRatingVal = $r['final_rating'];
+                    }
+
+                    $stmtAudit = $db->prepare("
+                        INSERT INTO appraisal_calibration_audit (appraisal_id, rating_id, old_rating, new_rating, changed_by_id, justification, created_at_utc)
+                        VALUES (?, ?, ?, ?, ?, ?, UTC_TIMESTAMP())
+                    ");
+                    $stmtAudit->execute([
+                        $appraisalId,
+                        $ratingId,
+                        $oldRatingVal,
+                        $newRatingVal,
+                        $userData['id'], // changed_by_id is users.id
+                        $justification
+                    ]);
+                }
+            }
+
+            $db->commit();
+        } catch (\Exception $e) {
+            $db->rollBack();
+            throw $e;
+        }
+    }
+
+    /**
+     * Request to reopen a finalized/completed appraisal
+     */
+    public function requestReopen(int $appraisalId, string $reason, array $userData): void
+    {
+        $db = \Database::getInstance()->getConnection();
+
+        // Verify appraisal exists and status is finalized or completed
+        $stmtCheck = $db->prepare("SELECT status, employee_id FROM employee_appraisals WHERE id = ?");
+        $stmtCheck->execute([$appraisalId]);
+        $appraisal = $stmtCheck->fetch(\PDO::FETCH_ASSOC);
+
+        if (!$appraisal) {
+            throw new \Exception("Appraisal not found.", 404);
+        }
+
+        if ($appraisal['status'] !== 'finalized' && $appraisal['status'] !== 'completed') {
+            throw new \Exception("Only completed or finalized appraisals can be requested to be reopened.", 400);
+        }
+
+        // Verify if there is already a PENDING request to prevent duplicates
+        $stmtPending = $db->prepare("SELECT id FROM appraisal_reopen_requests WHERE appraisal_id = ? AND status = 'PENDING'");
+        $stmtPending->execute([$appraisalId]);
+        if ($stmtPending->fetchColumn()) {
+            throw new \Exception("A pending reopen request already exists for this appraisal.", 400);
+        }
+
+        // Insert reopen request
+        $stmtIns = $db->prepare("
+            INSERT INTO appraisal_reopen_requests (appraisal_id, requested_by_id, reason, status, created_at_utc)
+            VALUES (?, ?, ?, 'PENDING', UTC_TIMESTAMP())
+        ");
+        $stmtIns->execute([
+            $appraisalId,
+            $userData['employee_id'], // requested_by_id corresponds to employees.id
+            $reason
+        ]);
+
+        // Dispatch reopen request event
+        $this->dispatchWorkflowEvent($appraisalId, 'REOPEN_REQUESTED', [
+            'requested_by_employee_id' => $userData['employee_id'],
+            'reason' => $reason
+        ]);
+    }
+
+    /**
+     * Decide on reopen request (APPROVED or REJECTED)
+     */
+    public function decideReopenRequest(int $requestId, string $decision, array $userData): void
+    {
+        $db = \Database::getInstance()->getConnection();
+        $decision = strtoupper($decision);
+
+        if (!in_array($decision, ['APPROVED', 'REJECTED'])) {
+            throw new \Exception("Invalid decision. Must be APPROVED or REJECTED.", 400);
+        }
+
+        $db->beginTransaction();
+        try {
+            $stmt = $db->prepare("SELECT * FROM appraisal_reopen_requests WHERE id = ? AND status = 'PENDING'");
+            $stmt->execute([$requestId]);
+            $request = $stmt->fetch(\PDO::FETCH_ASSOC);
+
+            if (!$request) {
+                throw new \Exception("Pending reopen request not found.", 404);
+            }
+
+            $appraisalId = (int)$request['appraisal_id'];
+            $expiryHours = (int)($request['expiry_window_hours'] ?? 48);
+
+            if ($decision === 'APPROVED') {
+                // Update reopen request status to APPROVED
+                $stmtUpdateReq = $db->prepare("
+                    UPDATE appraisal_reopen_requests 
+                    SET status = 'APPROVED', approved_by_id = ?, approved_at_utc = UTC_TIMESTAMP() 
+                    WHERE id = ?
+                ");
+                $stmtUpdateReq->execute([$userData['employee_id'], $requestId]);
+
+                // Change appraisal status back to 'in_progress' so the user can edit it
+                $db->prepare("
+                    UPDATE employee_appraisals 
+                    SET status = 'in_progress' 
+                    WHERE id = ?
+                ")->execute([$appraisalId]);
+
+                // Log the transition
+                \App\Helpers\ApprovalHelper::log('appraisal', $appraisalId, 'in_progress', "Appraisal reopened. Request approved by user ID " . $userData['id']);
+
+                // Dispatch event
+                $this->dispatchWorkflowEvent($appraisalId, 'REOPEN_APPROVED', [
+                    'request_id' => $requestId,
+                    'approved_by' => $userData['employee_id'],
+                    'expiry_window_hours' => $expiryHours
+                ]);
+            } else {
+                // Update reopen request status to REJECTED
+                $stmtUpdateReq = $db->prepare("
+                    UPDATE appraisal_reopen_requests 
+                    SET status = 'REJECTED', approved_by_id = ?, approved_at_utc = UTC_TIMESTAMP() 
+                    WHERE id = ?
+                ");
+                $stmtUpdateReq->execute([$userData['employee_id'], $requestId]);
+
+                // Dispatch event
+                $this->dispatchWorkflowEvent($appraisalId, 'REOPEN_REJECTED', [
+                    'request_id' => $requestId,
+                    'rejected_by' => $userData['employee_id']
+                ]);
+            }
+
+            $db->commit();
+        } catch (\Exception $e) {
+            $db->rollBack();
+            throw $e;
+        }
+    }
+
+    /**
+     * List all reopen requests
+     */
+    public function listReopenRequests(string $status = 'PENDING'): array
+    {
+        $db = \Database::getInstance()->getConnection();
+        $stmt = $db->prepare("
+            SELECT arr.*, ea.employee_id, e.first_name, e.last_name, e.employee_code, ac.name as cycle_name
+            FROM appraisal_reopen_requests arr
+            JOIN employee_appraisals ea ON arr.appraisal_id = ea.id
+            JOIN employees e ON ea.employee_id = e.id
+            JOIN appraisal_cycles ac ON ea.cycle_id = ac.id
+            WHERE arr.status = ?
+            ORDER BY arr.created_at_utc DESC
+        ");
+        $stmt->execute([$status]);
+        return $stmt->fetchAll(\PDO::FETCH_ASSOC);
     }
 }

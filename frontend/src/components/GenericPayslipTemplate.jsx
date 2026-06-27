@@ -162,7 +162,7 @@ const GenericPayslipTemplate = ({ data, companyLogo, companyName, companyData })
             boxSizing: 'border-box',
             boxShadow: '0 0 10px rgba(0,0,0,0.1)'
         }}>
-            {data.status !== 'Approved' && data.status !== 'Processed' && data.run_status !== 'Approved' && data.run_status !== 'Processed' && (
+            {(!['approved', 'processed', 'paid'].includes((data.status || '').toLowerCase()) && !['approved', 'processed', 'paid'].includes((data.run_status || '').toLowerCase())) && (
                 <div style={{
                     position: 'absolute',
                     top: '50%',

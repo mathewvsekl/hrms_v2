@@ -14,12 +14,7 @@ abstract class BaseApiController extends Controller
      */
     protected function apiSuccess($data = null, string $message = "Success", int $code = 200)
     {
-        return $this->jsonResponse([
-            'status' => 'success',
-            'message' => $message,
-            'data' => $data,
-            'timestamp' => date('Y-m-d H:i:s')
-        ], $code);
+        return $this->jsonResponse($data, $code, $message);
     }
 
     /**
